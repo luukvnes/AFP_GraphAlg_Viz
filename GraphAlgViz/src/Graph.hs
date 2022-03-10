@@ -1,6 +1,6 @@
 module Graph where
 
-import Data.GraphViz    
+import Data.GraphViz
 import Data.GraphViz.Attributes.Colors
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
@@ -12,9 +12,8 @@ cl = toWC (RGB 1 2 3)
 
 
 
-graph :: Gr () ()
-graph = empty
+graph :: Gr String ()
+graph = mkGraph [(1,"Luuk")] []
 
 test :: DotGraph Node
 test = graphToDot nonClusteredParams graph
-
