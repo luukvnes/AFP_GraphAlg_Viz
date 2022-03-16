@@ -7,14 +7,14 @@ import Data.Graph.Inductive.Tree
 import qualified Data.Set as S
 import Data.List
 import Data.Bifunctor
+import GHC.Base (undefined)
 
 type LEdge b = (Node, Node, b)
-
 
 type Label = String
 type EdgeList a b = [(a, a, b)] --list of edges, fromatted as (fromNodeLabel, toNodeLabel, edgeLabel)
 
--- Want function that takes an adjacency list and converts it into a graph.
+-- Want function that takes an edge list and converts it into a graph.
 
 fromAdjList :: (Ord a) => EdgeList a b -> Gr a b
 fromAdjList adjList = mkGraph nodes edges
@@ -78,5 +78,6 @@ bfs p graph = bfs' p markedGraph [explored firstNode]
 bfs' :: (LNode a -> Bool) -> Gr (a, Bool) b -> [LNode (a,Bool)] -> Maybe (LNode a)
 -- bfs' :: predicate -> graph -> queue -> found node (if it exists)
 bfs' p graph [] = Nothing
-bfs' p graph (q:qs) = if p n then (\(n, (x,_)) -> (n,x)) q
-                      else undefined
+bfs' p graph (q:qs) = undefined
+  --  if p q then Just ((\(n, (x,_)) -> (n,x)) q)
+  --                     else undefined
