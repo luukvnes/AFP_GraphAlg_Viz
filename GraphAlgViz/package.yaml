@@ -24,6 +24,8 @@ dependencies:
 - graphviz
 - fgl
 - containers
+- directory
+- JuicyPixels
 
 library:
   source-dirs: src

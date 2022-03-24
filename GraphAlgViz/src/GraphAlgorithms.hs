@@ -2,10 +2,16 @@ module GraphAlgorithms where
 
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
+import Data.GraphViz
+import Data.GraphViz.Attributes.Colors
+import Data.GraphViz.Attributes.Complete
+import Data.GraphViz.Attributes
+import System.Directory
 import Graph
+import Data.String (String)
 
 newtype AlgStep a b p r = Step (p -> Gr a b -> Either r (Gr a b, p))
-newtype AlgorithmViz a b p = Viz (p -> Gr a b -> (Gr a b, p))
+newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 {- Parameterized by
     a, the type of the label of the node
     b, the type of the label of the edge
@@ -17,6 +23,33 @@ newtype AlgorithmViz a b p = Viz (p -> Gr a b -> (Gr a b, p))
 step :: AlgStep a b p r -> p -> Gr a b -> Either r (Gr a b, p)
 step (Step alg) params graph = alg params graph
 
+
+--takes a way of visualizing a graph and a graph and visualizes it.
+-- lots of stuff happens here, summarry is that it tries to create the directories if they do not exist yet
+-- and then creates a new name for each of the bmp images,  so for a new image path for each step
+-- then writes image to that path. 
+
+-- current bug with creating the inner directory, for now run twice.
+visualize :: AlgorithmViz a b -> Gr a b -> IO ()
+visualize (Viz alg) graph = do
+    exists <- doesDirectoryExist "resultFolder"
+    if exists then pure () else createDirectory "resultFolder"
+    dirs <- listDirectory "resultFolder"
+    if null dirs then createDirectory "resultFolder/results1"  else pure ()--todo create new directory every run
+    let dir = last dirs
+    files <- listDirectory ("resultFolder./" ++ dir)
+    let lastFile = if null files then "0.bmp" else head files
+    let newFileName = "resultFolder./" ++ dir ++ "./" ++ (incrementFileName lastFile)
+    str <- runGraphviz (alg graph) Bmp newFileName
+    putStrLn str
+
+incrementFileName :: String -> String
+incrementFileName str = show ((read (dropExtension str)) + 1) ++ ".bmp"
+
+dropExtension str = reverse (dropExtension' (reverse str))
+dropExtension' [] = []
+dropExtension' ('.':xs) = xs
+dropExtension' (x:xs) = dropExtension' xs
 --executes step until it reaches a result.
 run :: AlgStep a b p r -> p -> Gr a b -> r
 run algStep params graph = case step algStep params graph of
@@ -24,14 +57,32 @@ run algStep params graph = case step algStep params graph of
                                       Right (newGraph, newParams) -> run algStep newParams newGraph
 
 
-runAndPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> p -> Gr a b -> IO ()
-runAndPrint algStep params graph = case step algStep params graph of
-                                        Left r -> print "Final graph" >> prettyPrint graph >> print ("Result: " ++ show r)
-                                        Right (newGraph, newParams) -> prettyPrint graph >> print "--------------------------" >> runAndPrint algStep newParams newGraph
+runAndPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
+runAndPrint algStep algViz params graph = case step algStep params graph of
+                                        Left r -> print "Final graph" >> visualize algViz graph
+                                        Right (newGraph, newParams) -> visualize algViz graph >> print "--------------------------" >> runAndPrint algStep algViz newParams newGraph
 
---takes a way of visualizing a graph and a graph and visualizes it.
-visualize :: AlgorithmViz a b p -> Gr a b -> IO ()
-visualize = undefined
+
+
+-- bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
+bfsViz :: Eq a => Ord b => AlgorithmViz (a, Bool) b
+bfsViz = Viz bfsViz'
+
+bfsViz' :: Ord b => Gr (a, Bool) b -> DotGraph Node
+bfsViz' graph = setDirectedness graphToDot params graph
+  where
+    params = blankParams { globalAttributes = []
+                         , clusterBy        = clustBy
+                         , clusterID        = Num . Int
+                         , isDotCluster     = const True
+                         , fmtCluster       = const []
+                         , fmtNode          = fmtNode
+                         , fmtEdge          = const []
+                         }
+    clustBy (n,l) = C 1 $ N (n,l)
+    fmtNode (a, (_, True)) = [Color [WC (X11Color Aquamarine4) Nothing] ] --, color (X11Color Aquamarine4)
+    fmtNode (a, (_, False)) = [Color [WC (X11Color Red) Nothing] ] --, color (X11Color Aquamarine4)
+
 
 
 {-
