@@ -1,13 +1,9 @@
 module Graph where
 
-import Data.GraphViz
-import Data.GraphViz.Attributes.Colors
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
-import qualified Data.Set as S
 import Data.List
-import Data.Bifunctor
-import GHC.Base (undefined)
+
 
 type LEdge b = (Node, Node, b)
 
@@ -37,19 +33,3 @@ listOutNeighbors gr n = foldMap f [ (i, lab gr i) | i <- ns]
     where ns = suc gr n
           f (i, Just l) = [(i, l)]
           f (_, Nothing) = []
-
-params :: GraphvizParams Node nl el () nl
-params = Params { isDirected       = True
-                 , globalAttributes = []
-                 , clusterBy        = N
-                 , isDotCluster     = const True
-                 , clusterID        = const (Num $ Int 0)
-                 , fmtCluster       = const []
-                 , fmtNode          = fmtNode' (\(n,_) -> n==1 )
-                 , fmtEdge          = const []
-                }
-
-
---takes a predicate p and only colors the node if p is true
-fmtNode' :: (LNode a -> Bool) -> LNode a -> Attributes
-fmtNode' p n = if p n then [fillColor Red, style filled] else []

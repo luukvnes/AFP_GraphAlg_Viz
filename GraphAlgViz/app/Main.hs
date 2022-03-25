@@ -4,9 +4,11 @@ import Data.GraphViz
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 
-import GraphAlgorithms
+import Algorithms
+import Visualization
 import Graph
 import Gif
+import Helper
 
 
 main :: IO ()

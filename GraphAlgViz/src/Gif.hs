@@ -9,10 +9,7 @@ attemptToCreateGif = do
     dirs <- listDirectory "resultFolder/results1"
     let fullPaths  = map ("resultFolder/results1/" ++) dirs -- Creates all the paths to the images to be converted into a gif
     eImgs <- mapM readBitmap (reverse fullPaths) -- converts them to (Either str DynamicImage)
-    let imgs = map extractImage eImgs -- Extracts the dynamic image
-    let rgbImgs = map convertRGB8 imgs -- Converts to RBG8 images
-    let palImgs = map (palettize paletteOptions) rgbImgs -- Converts to images with palettes and gray pixels
-    let palDelayImgs = map (\(x,y) -> (y, 100, x)) palImgs -- adds gif delay and for some reason a gif with image reverses order of palette and pixels in the tuple
+    let palDelayImgs = map ((\(x,y) -> (y, 100, x)) . (palettize paletteOptions) . convertRGB8 . extractImage) eImgs
     let gifWithError = writeGifImages "resultFolder/gifResults/2.gif" LoopingNever palDelayImgs -- writes the gif to a file and returns something
     extractGif gifWithError --not sure what the IO result entails
 
@@ -31,5 +28,3 @@ extractImage (Right img) = img
 extractGif :: Either String (IO ()) -> IO ()
 extractGif (Left str) = error (str ++ "notsure")
 extractGif (Right io) = io
-
-

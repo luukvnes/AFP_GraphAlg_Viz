@@ -25,9 +25,11 @@ source-repository head
 
 library
   exposed-modules:
+      Algorithms
       Gif
       Graph
-      GraphAlgorithms
+      Helper
+      Visualization
   other-modules:
       Paths_GraphAlgViz
   hs-source-dirs:
