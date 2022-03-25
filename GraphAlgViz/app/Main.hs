@@ -12,18 +12,14 @@ import Helper
 
 
 main :: IO ()
-main = runAndPrint bfsStep bfsViz params flaggedGraph
-  where params = (p, [addFlag (const True) firstNode])
-        p n@(i,l) = l == "Maasdfasdf"
-        flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,True) else (x,False)) graph
-        firstNode = head . labNodes $ graph
-
-createGif = attemptToCreateGif
-
-graph = fromAdjList [("Lukas","Luuk",'A'),
-                     ("Lukas", "Max", 'B'),
-                     ("Luuk", "Max" , 'C'),
-                     ("Luuk", "Taco" , 'D'),
-                     ("Taco", "Mark" , 'E'),
-                     ("Mark", "Lukas" , 'F')
-                    ]
+main = do
+  str <- readFile "./graphs/example1.txt"
+  let graph = parseGraph str
+  prettyPrint graph
+  {-
+  let firstNode = head . labNodes $ graph
+  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,True) else (x,False)) graph
+  let p n@(i,l) = l == "Cat"
+  let params = (p, [addFlag (const True) firstNode])
+  runAndPrint bfsStep bfsViz params flaggedGraph
+  -}

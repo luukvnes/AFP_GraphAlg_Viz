@@ -3,6 +3,7 @@ module Graph where
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 import Data.List
+import Data.List.Split
 
 
 type LEdge b = (Node, Node, b)
@@ -20,6 +21,12 @@ fromAdjList adjList = mkGraph nodes edges
         g (Just i,Just j,lab) = [(i,j,lab)]
         g _                   = []
         sortedNodeLabels = map head . group . sort . concat $ [ [from, to] | (from,to,_) <- adjList]
+
+--Takes a string formatted where each line corresponds to an edge and returns graph
+--Every line is formatted as "from, to, label"
+parseGraph :: String -> Gr String String
+parseGraph = fromAdjList . map (\(from:to:edgeLabel:_) -> (from, to, edgeLabel)) . map (splitOn ", ") . lines
+
 
 --gets all labeled neighbours of a node
 listNeighbors :: Graph gr => gr a b -> Node -> [LNode a]

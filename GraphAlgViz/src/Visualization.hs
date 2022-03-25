@@ -2,9 +2,11 @@ module Visualization where
 
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
+
 import Data.GraphViz
 import Data.GraphViz.Attributes.Colors
 import Data.GraphViz.Attributes.Complete
+
 import System.Directory
 
 import Algorithms
