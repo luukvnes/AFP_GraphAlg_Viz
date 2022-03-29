@@ -102,14 +102,13 @@ bfsStep' :: (Eq a) =>
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, BFSParams a)
 bfsStep' (p, []) graph = Left Nothing
-bfsStep' (p, (q:qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+bfsStep' (p, (q@(n,l'):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
                            | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
         f l@(label, Queued)     = if l == l' then l else (label, Explored)
         f l@(label, Unexplored) = if l == l' then (label, Queued) else l
         f l = l
-        (_, l') = q
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, qs ++ unexploredNodes)
         --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag

@@ -18,6 +18,7 @@ main = do
   let p n@(i,l) = l == 7
   let params = (p, [addFlag (const Queued) firstNode])
   runAndPrettyPrint bfsStep params flaggedGraph
+  --runGraphvizCanvas Dot (bfsViz' flaggedGraph) Xlib
 
 graph = fromEdgeList [(1,2,""),
                       (2,1,""),

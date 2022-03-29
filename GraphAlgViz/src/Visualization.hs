@@ -7,6 +7,7 @@ import Data.GraphViz
 import Data.GraphViz.Attributes.Colors
 import Data.GraphViz.Attributes.Complete
 
+import Control.Monad
 import System.Directory
 
 import Algorithms
@@ -18,9 +19,9 @@ newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 visualize :: AlgorithmViz a b -> Gr a b -> IO ()
 visualize (Viz alg) graph = do
     exists <- doesDirectoryExist "resultFolder"
-    if exists then pure () else createDirectory "resultFolder"
+    when (not exists) (createDirectory "resultFolder")
     dirs <- listDirectory "resultFolder"
-    if null dirs then createDirectory "resultFolder/results1"  else pure ()--todo create new directory every run
+    when (null dirs) (createDirectory "resultFolder/results1")
     let dir = last dirs
     files <- listDirectory ("resultFolder./" ++ dir)
     let lastFile = if null files then "0.bmp" else head files
