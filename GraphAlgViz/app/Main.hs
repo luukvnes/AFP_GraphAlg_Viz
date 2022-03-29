@@ -13,13 +13,19 @@ import Helper
 
 main :: IO ()
 main = do
-  str <- readFile "./graphs/example1.txt"
-  let graph = parseGraph str
-  prettyPrint graph
-  {-
   let firstNode = head . labNodes $ graph
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,True) else (x,False)) graph
-  let p n@(i,l) = l == "Cat"
+  let p n@(i,l) = l == 3
   let params = (p, [addFlag (const True) firstNode])
-  runAndPrint bfsStep bfsViz params flaggedGraph
-  -}
+  runAndPrettyPrint bfsStep params flaggedGraph
+
+graph = fromEdgeList [(1,2,""),
+                      (2,1,""),
+                      (2,3,""),
+                      (4,3,""),
+                      (1,4,""),
+                      (4,5,""),
+                      (5,6,""),
+                      (6,3,""),
+                      (6,7,""),
+                      (7,1,"")]

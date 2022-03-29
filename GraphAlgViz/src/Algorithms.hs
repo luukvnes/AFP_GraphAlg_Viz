@@ -2,6 +2,7 @@ module Algorithms where
 
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
+import Data.Bifunctor
 
 import Graph
 import Helper
@@ -13,6 +14,33 @@ newtype AlgStep a b p r = Step (p -> Gr a b -> Either r (Gr a b, p))
     p, the paramters used in the algorithm
     r, the result type, eg a Path (from start to end node) for bfs
 -}
+
+{-
+-- fmap runs the step creates a new step which runs the step until it reaches a result, then maps the function over it.
+-- step $ fmap id step == run step
+instance Functor (AlgStep a b p) where
+  fmap f step = Step $ \p g -> Left $ f $ run step p g
+
+instance Applicative (AlgStep a b p) where
+  pure r = Step (\_ _ -> Left r)
+  (Step f) <*> (Step x) = undefined
+-}
+
+-- Creates a new step function that alters the result using f
+-- If there is no result f does nothing.
+instance Functor (AlgStep a b p) where
+  fmap f (Step alg) = Step $ \params graph -> first f $ alg params graph
+
+instance Applicative (AlgStep a b p) where
+  pure r = Step (\_ _ -> Left r)
+  -- If both return a result, then apply the function to the result.
+  (Step f) <*> (Step x) = Step $ \p g -> case (f p g, x p g) of
+                                              (Left function, Left result) -> Left $ function result
+                                              (Left function, Right x) -> Right x
+                                              (Right x, Left result) -> Right x
+                                              (Right x, Right y) -> Right x
+
+
 
 -- executes a stingle step of the algorithm defined by AlgStep
 step :: AlgStep a b p r -> p -> Gr a b -> Either r (Gr a b, p)
@@ -49,8 +77,8 @@ bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
 -- returns the node if it finds one.
 bfsStep = Step bfsStep'
 
-
--- Change labeling to label as explored when dequeued for nicer visualization.
+{-
+--Original labeling as in Psuedocode
 bfsStep' :: (Eq a) =>
         BFSParams a ->
         Gr (a, Bool) b ->
@@ -66,6 +94,26 @@ bfsStep' (p, (q:qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
         newParams = (p, qs ++ map (setFlag (const True)) unexploredNodes)
         --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
         unexploredNodes = filter (\x -> getFlag x == False) $ listOutNeighbors graph $ fst q
+-}
+
+-- Change labeling to label as explored when dequeued for nicer visualization.
+bfsStep' :: (Eq a) =>
+        BFSParams a ->
+        Gr (a, Bool) b ->
+        Either (Maybe (LNode a)) (Gr (a, Bool) b, BFSParams a)
+bfsStep' (p, []) graph = Left Nothing
+bfsStep' (p, (q:qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+                           | otherwise          = Right (newGraph, newParams)
+  where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
+        newGraph = nmap f graph
+        f (label, True) = (label, True)
+        f l@(label, False) = if l == l' then (label, True) else l
+        (_, l') = q
+        --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
+        newParams = (p, qs ++ unexploredNodes)
+        --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
+        unexploredNodes = filter (\x -> getFlag x == False) $ listOutNeighbors graph $ fst q
+
 
 -- runs the bfs algorithm by calling run with the right parameters
 bfsRun :: Eq a => (LNode a -> Bool) -> Gr a b -> Maybe (LNode a)

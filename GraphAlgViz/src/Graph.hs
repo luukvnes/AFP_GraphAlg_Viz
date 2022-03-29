@@ -13,8 +13,8 @@ type EdgeList a b = [(a, a, b)] --list of edges, fromatted as (fromNodeLabel, to
 
 -- Want function that takes an edge list and converts it into a graph.
 
-fromAdjList :: (Ord a) => EdgeList a b -> Gr a b
-fromAdjList adjList = mkGraph nodes edges
+fromEdgeList :: (Ord a) => EdgeList a b -> Gr a b
+fromEdgeList adjList = mkGraph nodes edges
   where nodes = zip [1..] $ sortedNodeLabels
         edges = foldMap g [ (i,j,lab) | (from, to, lab) <- adjList, let i = f from, let j = f to]
         f lab = fst <$> find (\x -> snd x == lab) nodes
@@ -25,7 +25,7 @@ fromAdjList adjList = mkGraph nodes edges
 --Takes a string formatted where each line corresponds to an edge and returns graph
 --Every line is formatted as "from, to, label"
 parseGraph :: String -> Gr String String
-parseGraph = fromAdjList . map (\(from:to:edgeLabel:_) -> (from, to, edgeLabel)) . map (splitOn ", ") . lines
+parseGraph = fromEdgeList . map (\(from:to:edgeLabel:_) -> (from, to, edgeLabel)) . map (splitOn ", ") . lines
 
 
 --gets all labeled neighbours of a node
