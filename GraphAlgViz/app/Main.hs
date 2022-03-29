@@ -14,9 +14,9 @@ import Helper
 main :: IO ()
 main = do
   let firstNode = head . labNodes $ graph
-  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,True) else (x,False)) graph
-  let p n@(i,l) = l == 3
-  let params = (p, [addFlag (const True) firstNode])
+  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
+  let p n@(i,l) = l == 7
+  let params = (p, [addFlag (const Queued) firstNode])
   runAndPrettyPrint bfsStep params flaggedGraph
 
 graph = fromEdgeList [(1,2,""),

@@ -6,8 +6,6 @@ import Data.List
 import Data.List.Split
 
 
-type LEdge b = (Node, Node, b)
-
 type Label = String
 type EdgeList a b = [(a, a, b)] --list of edges, fromatted as (fromNodeLabel, toNodeLabel, edgeLabel)
 

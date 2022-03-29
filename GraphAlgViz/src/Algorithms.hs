@@ -68,9 +68,9 @@ Psuedocode for the implementation of breadth first search
 12                  Q.enqueue(w)
 -}
 
-type BFSParams a = ((LNode a -> Bool), [LNode (a,Bool)])
+type BFSParams a = ((LNode a -> Bool), [LNode (a,Flag)])
 
-bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
+bfsStep :: Eq a => AlgStep (a, Flag) b (BFSParams a) (Maybe (LNode a))
 -- bfs has params
 -- (LNode a -> Bool), a function that checks if the found node is the one were looking for
 -- [LNode (a,Bool)], a queue
@@ -99,25 +99,26 @@ bfsStep' (p, (q:qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
 -- Change labeling to label as explored when dequeued for nicer visualization.
 bfsStep' :: (Eq a) =>
         BFSParams a ->
-        Gr (a, Bool) b ->
-        Either (Maybe (LNode a)) (Gr (a, Bool) b, BFSParams a)
+        Gr (a, Flag) b ->
+        Either (Maybe (LNode a)) (Gr (a, Flag) b, BFSParams a)
 bfsStep' (p, []) graph = Left Nothing
 bfsStep' (p, (q:qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
                            | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
-        f (label, True) = (label, True)
-        f l@(label, False) = if l == l' then (label, True) else l
+        f l@(label, Queued)     = if l == l' then l else (label, Explored)
+        f l@(label, Unexplored) = if l == l' then (label, Queued) else l
+        f l = l
         (_, l') = q
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, qs ++ unexploredNodes)
         --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
-        unexploredNodes = filter (\x -> getFlag x == False) $ listOutNeighbors graph $ fst q
+        unexploredNodes = filter (\x -> getFlag x == Unexplored) $ listOutNeighbors graph $ fst q
 
 
 -- runs the bfs algorithm by calling run with the right parameters
 bfsRun :: Eq a => (LNode a -> Bool) -> Gr a b -> Maybe (LNode a)
 bfsRun p graph = run bfsStep params flaggedGraph
-  where params = (p, [addFlag (const True) firstNode])
-        flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,True) else (x,False)) graph
+  where params = (p, [addFlag (const Queued) firstNode])
+        flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
         firstNode = head . labNodes $ graph

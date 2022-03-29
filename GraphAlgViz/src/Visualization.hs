@@ -40,10 +40,10 @@ runAndPrettyPrint algStep params graph = case step algStep params graph of
                                               Right (newGraph, newParams) -> prettyPrint graph >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
 
 -- bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
-bfsViz :: Eq a => Ord b => AlgorithmViz (a, Bool) b
+bfsViz :: (Eq a, Ord b) => AlgorithmViz (a, Flag) b
 bfsViz = Viz bfsViz'
 
-bfsViz' :: Ord b => Gr (a, Bool) b -> DotGraph Node
+bfsViz' :: Ord b => Gr (a, Flag) b -> DotGraph Node
 bfsViz' graph = setDirectedness graphToDot params graph
   where
     params = blankParams { globalAttributes = []
@@ -55,5 +55,6 @@ bfsViz' graph = setDirectedness graphToDot params graph
                          , fmtEdge          = const []
                          }
     clustBy (n,l) = C 1 $ N (n,l)
-    fmtNode (a, (_, True)) = [Color [WC (X11Color Aquamarine4) Nothing] ] --, color (X11Color Aquamarine4)
-    fmtNode (a, (_, False)) = [Color [WC (X11Color Red) Nothing] ] --, color (X11Color Aquamarine4)
+    fmtNode (a, (_, Unexplored)) = [Color [WC (X11Color Blue) Nothing] ]
+    fmtNode (a, (_, Queued)) = [Color [WC (X11Color Red) Nothing] ]
+    fmtNode (a, (_, Explored)) = [Color [WC (X11Color Green) Nothing] ]

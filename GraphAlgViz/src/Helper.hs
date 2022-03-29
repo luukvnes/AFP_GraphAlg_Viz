@@ -4,20 +4,25 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 
 
+data Flag = Unexplored
+          | Explored
+          | Queued
+          deriving (Show, Eq)
+
 --Helper functions for manipulating flags in node labels
 --add a boolean flag to the label type using a tuple and a function from nodes to booleans
-addFlag :: (LNode a -> Bool) -> LNode a -> LNode (a,Bool)
+addFlag :: (LNode a -> Flag) -> LNode a -> LNode (a,Flag)
 addFlag p n@(node,label) = (node, (label,p n))
 
-setFlag :: (LNode (a,Bool) -> Bool) -> LNode (a,Bool) -> LNode (a,Bool)
+setFlag :: (LNode (a,Flag) -> Flag) -> LNode (a,Flag) -> LNode (a,Flag)
 setFlag p n@(node,(label, _)) = (node, (label,p n))
 
 --extract a boolean flag from a node
-getFlag :: LNode (a,Bool) -> Bool
-getFlag (_,(_,b)) = b
+getFlag :: LNode (a,Flag) -> Flag
+getFlag (_,(_,f)) = f
 
 --remove a flag from a node.
-removeFlag :: LNode (a,Bool) -> LNode a
+removeFlag :: LNode (a,Flag) -> LNode a
 removeFlag (n,(l,_)) = (n,l)
 
 
