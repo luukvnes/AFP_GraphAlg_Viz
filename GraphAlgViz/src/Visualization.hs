@@ -18,16 +18,15 @@ newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 -- current bug with creating the inner directory, for now run twice.
 visualize :: AlgorithmViz a b -> Gr a b -> IO ()
 visualize (Viz alg) graph = do
-    exists <- doesDirectoryExist "resultFolder"
-    when (not exists) (createDirectory "resultFolder")
-    dirs <- listDirectory "resultFolder"
-    when (null dirs) (createDirectory "resultFolder/results1")
-    let dir = last dirs
-    files <- listDirectory ("resultFolder./" ++ dir)
+    dirs <- listDirectory "resultFolder/ImageFolders"
+    let dir = head dirs
+    files <- listDirectory ("resultFolder/ImageFolders/" ++ dir)
     let lastFile = if null files then "0.bmp" else head files
-    let newFileName = "resultFolder./" ++ dir ++ "./" ++ (incrementFileName lastFile)
+    let newFileName = "resultFolder/ImageFolders/" ++ dir ++ "/" ++ incrementFileName lastFile ".bmp"
     str <- runGraphviz (alg graph) Bmp newFileName
     putStrLn str
+
+
 
 --same as run, but prints the graph to the terminal at every step
 runAndPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()

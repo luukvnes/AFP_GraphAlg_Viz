@@ -20,6 +20,16 @@ main = do
   runAndPrettyPrint bfsStep params flaggedGraph
   --runGraphvizCanvas Dot (bfsViz' flaggedGraph) Xlib
 
+mainGif :: IO ()
+mainGif = do
+  let firstNode = head . labNodes $ graph
+  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
+  let p n@(i,l) = l == 7
+  let params = (p, [addFlag (const Queued) firstNode])
+  createFolderStructure
+  runAndPrint bfsStep bfsViz params flaggedGraph
+  attemptToCreateGif
+
 graph = fromEdgeList [(1,2,""),
                       (2,1,""),
                       (2,3,""),
