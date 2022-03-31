@@ -4,9 +4,9 @@ import Data.List.Split
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 import System.Directory
+import System.IO  
 import Control.Monad
-
-
+import Graph
 data Flag = Unexplored
           | Explored
           | Queued
@@ -51,3 +51,22 @@ createFolderStructure = do
     dirs <- listDirectory "resultFolder/ImageFolders"
     let isDirEmpty =  null dirs
     if isDirEmpty then createDirectory "resultFolder/ImageFolders/1" else createDirectory ("resultFolder/ImageFolders/" ++ incrementFolderName (head dirs))
+
+getGifPath :: IO String
+getGifPath = do
+    line <- getLine
+    if line == "" then retrieveDefaultGif else return line
+
+retrieveDefaultGif :: IO [Char]
+retrieveDefaultGif = do 
+    gifFiles <- listDirectory "resultFolder/gifResults"
+    let lastFile = if null gifFiles then "0.gif" else head gifFiles
+    return $ "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"
+
+getGraphPath :: IO (Gr String String)
+getGraph = do
+    line <- getLine
+    let location = if line == "" then "graphs/default.txt" else line
+    handle <- openFile location ReadMode
+    contents <- hGetContents handle
+    return (parseGraph contents)

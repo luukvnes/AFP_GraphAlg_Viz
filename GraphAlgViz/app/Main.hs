@@ -10,15 +10,30 @@ import Graph
 import Gif
 import Helper
 
-
 main :: IO ()
 main = do
+
+  putStrLn  "Give the relative path for the gif (default: './resultFolder/gifResults/{n}.gif')"
+  gifPath <- getGifPath
+  putStrLn  "Give the relative path for the graph you want to use (default: './graphs/default.txt')"
+  graph <- getGraph
+  putStrLn  "Give the algorithm you want to visualize (default: 'BFS')"
+  (algorithm, visualizer) <- getAlgorithm
   let firstNode = head . labNodes $ graph
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-  let p n@(i,l) = l == 7
+  let p n@(i,l) = l == "7"
   let params = (p, [addFlag (const Queued) firstNode])
-  runAndPrettyPrint bfsStep params flaggedGraph
-  --runGraphvizCanvas Dot (bfsViz' flaggedGraph) Xlib
+  createFolderStructure
+  runAndPrint algorithm visualizer params flaggedGraph
+  attemptToCreateGif gifPath
+
+-- Is not in helper.hs to avoid circular imports
+getAlgorithm = do
+    returnAlg <$> getLine
+
+returnAlg "" = (bfsStep, bfsViz)
+returnAlg "BFS" = (bfsStep, bfsViz)
+returnAlg _ = error "Algorithm not found"
 
 mainGif :: IO ()
 mainGif = do
@@ -28,7 +43,8 @@ mainGif = do
   let params = (p, [addFlag (const Queued) firstNode])
   createFolderStructure
   runAndPrint bfsStep bfsViz params flaggedGraph
-  attemptToCreateGif
+  gifPath <- getGifPath
+  attemptToCreateGif gifPath
 
 graph = fromEdgeList [(1,2,""),
                       (2,1,""),

@@ -5,19 +5,15 @@ import Codec.Picture
 import System.Directory
 import Helper
 
-
-attemptToCreateGif = do
+attemptToCreateGif :: [Char] -> IO ()
+attemptToCreateGif gifPath = do
     imageFolderDirs <- listDirectory "resultFolder/ImageFolders"
     let imageFolderDir = "resultFolder/ImageFolders/"  ++ head imageFolderDirs ++ "/"
     files <- listDirectory imageFolderDir
     let fullPaths  = map (imageFolderDir ++) files -- Creates all the paths to the images to be converted into a gif
     eImgs <- mapM readBitmap (reverse fullPaths) -- converts them to (Either str DynamicImage)
-    gifFiles <- listDirectory "resultFolder/gifResults"
-    let lastFile = if null gifFiles then "0.gif" else head gifFiles
-    let newFileName = "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"
     let palDelayImgs = map ((\(x,y) -> (y, 100, x)) . palettize paletteOptions . convertRGB8 . extractImage) eImgs
-    let gifWithError = writeGifImages newFileName LoopingNever palDelayImgs -- writes the gif to a file and returns something
-
+    let gifWithError = writeGifImages gifPath LoopingNever palDelayImgs -- writes the gif to a file and returns something
     extractGif gifWithError --not sure what the IO result entails
 
 -- palettize :: PaletteOptions -> Image PixelRGB8 -> (Image Pixel8, Palette)
