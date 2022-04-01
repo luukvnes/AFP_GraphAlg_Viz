@@ -7,23 +7,12 @@ import Data.List
 import Graph
 import Helper
 
-newtype AlgStep a b p r = Step (p -> Gr a b -> Either r (Gr a b, p))
+newtype AlgStep a b p r = Step {step :: p -> Gr a b -> Either r (Gr a b, p)}
 {- Parameterized by
     a, the type of the label of the node
     b, the type of the label of the edge
     p, the paramters used in the algorithm
     r, the result type, eg a Path (from start to end node) for bfs
--}
-
-{-
--- fmap runs the step creates a new step which runs the step until it reaches a result, then maps the function over it.
--- step $ fmap id step == run step
-instance Functor (AlgStep a b p) where
-  fmap f step = Step $ \p g -> Left $ f $ run step p g
-
-instance Applicative (AlgStep a b p) where
-  pure r = Step (\_ _ -> Left r)
-  (Step f) <*> (Step x) = undefined
 -}
 
 -- Creates a new step function that alters the result using f
@@ -41,16 +30,12 @@ instance Applicative (AlgStep a b p) where
                                               (Right x, Right y) -> Right x
 
 
-
--- executes a stingle step of the algorithm defined by AlgStep
-step :: AlgStep a b p r -> p -> Gr a b -> Either r (Gr a b, p)
-step (Step alg) params graph = alg params graph
-
 --executes step until it reaches a result.
 run :: AlgStep a b p r -> p -> Gr a b -> r
 run algStep params graph = case step algStep params graph of
                                       Left r -> r
                                       Right (newGraph, newParams) -> run algStep newParams newGraph
+
 
 {-
 Psuedocode for the implementation of breadth first search
@@ -103,7 +88,7 @@ bfsStep' :: (Eq a) =>
         Either (Maybe (LNode a)) (Gr (a, Flag) b, BFSParams a)
 bfsStep' (p, []) graph = Left Nothing
 bfsStep' (p, (q@(n,l'):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
-                           | otherwise          = Right (newGraph, newParams)
+                                  | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
         f l@(label, Queued)     = if l == l' then l else (label, Explored)

@@ -21,10 +21,10 @@ main = do
   (algorithm, visualizer) <- getAlgorithm
   let firstNode = head . labNodes $ graph
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-  let p n@(i,l) = l == "7"
+  let p n@(i,l) = l == "HJ"
   let params = (p, [addFlag (const Queued) firstNode])
   createFolderStructure
-  runAndPrint algorithm visualizer params flaggedGraph
+  runAndViz algorithm visualizer params flaggedGraph
   attemptToCreateGif gifPath
 
 -- Is not in helper.hs to avoid circular imports
@@ -43,17 +43,6 @@ mainGif = do
   let p n@(i,l) = l == 7
   let params = (p, [addFlag (const Queued) firstNode])
   createFolderStructure
-  runAndPrint bfsStep bfsViz params flaggedGraph
+  runAndViz bfsStep bfsViz params flaggedGraph
   gifPath <- getGifPath
   attemptToCreateGif gifPath
-
-graph = fromEdgeList [(1,2,""),
-                      (2,1,""),
-                      (2,3,""),
-                      (4,3,""),
-                      (1,4,""),
-                      (4,5,""),
-                      (5,6,""),
-                      (6,3,""),
-                      (6,7,""),
-                      (7,1,"")]

@@ -42,6 +42,7 @@ library
     , fgl
     , graphviz
     , split
+    , text
   default-language: Haskell2010
 
 executable GraphAlgViz-exe
@@ -60,6 +61,7 @@ executable GraphAlgViz-exe
     , fgl
     , graphviz
     , split
+    , text
   default-language: Haskell2010
 
 test-suite GraphAlgViz-test
@@ -80,4 +82,5 @@ test-suite GraphAlgViz-test
     , fgl
     , graphviz
     , split
+    , text
   default-language: Haskell2010

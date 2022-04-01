@@ -27,6 +27,7 @@ dependencies:
 - directory
 - JuicyPixels
 - split
+- text
 
 library:
   source-dirs: src

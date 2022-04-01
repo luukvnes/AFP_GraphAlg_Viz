@@ -9,6 +9,7 @@ import Data.GraphViz.Attributes.Complete
 
 import Control.Monad
 import System.Directory
+import Data.Text.Lazy (pack)
 
 import Algorithms
 import Helper
@@ -29,10 +30,10 @@ visualize (Viz alg) graph = do
 
 
 --same as run, but prints the graph to the terminal at every step
-runAndPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
-runAndPrint algStep algViz params graph = case step algStep params graph of
+runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
+runAndViz algStep algViz params graph = case step algStep params graph of
                                         Left r -> print "Final graph" >> visualize algViz graph
-                                        Right (newGraph, newParams) -> visualize algViz graph >> print "--------------------------" >> runAndPrint algStep algViz newParams newGraph
+                                        Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
 
 runAndPrettyPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> p -> Gr a b -> IO ()
 runAndPrettyPrint algStep params graph = case step algStep params graph of
@@ -40,10 +41,10 @@ runAndPrettyPrint algStep params graph = case step algStep params graph of
                                               Right (newGraph, newParams) -> prettyPrint graph >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
 
 -- bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
-bfsViz :: (Eq a, Ord b) => AlgorithmViz (a, Flag) b
+bfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 bfsViz = Viz bfsViz'
 
-bfsViz' :: Ord b => Gr (a, Flag) b -> DotGraph Node
+bfsViz' :: (Show a, Ord b) => Gr (a, Flag) b -> DotGraph Node
 bfsViz' graph = setDirectedness graphToDot params graph
   where
     params = blankParams { globalAttributes = []
@@ -55,6 +56,12 @@ bfsViz' graph = setDirectedness graphToDot params graph
                          , fmtEdge          = const []
                          }
     clustBy (n,l) = C 1 $ N (n,l)
-    fmtNode (a, (_, Unexplored)) = [Color [WC (X11Color Blue) Nothing] ]
-    fmtNode (a, (_, Queued)) = [Color [WC (X11Color Red) Nothing] ]
-    fmtNode (a, (_, Explored)) = [Color [WC (X11Color Green) Nothing] ]
+    fmtNode (n, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
+    fmtNode (n, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
+    fmtNode (a, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
+
+    label :: Show a => a -> Attribute
+    label = Label . StrLabel . pack . filter (/='"') . show
+
+dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
+dfsViz = bfsViz
