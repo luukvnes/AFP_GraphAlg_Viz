@@ -3,7 +3,7 @@ module Algorithms where
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 import Data.Bifunctor
-
+import Data.List
 import Graph
 import Helper
 
@@ -120,4 +120,39 @@ bfsRun :: Eq a => (LNode a -> Bool) -> Gr a b -> Maybe (LNode a)
 bfsRun p graph = run bfsStep params flaggedGraph
   where params = (p, [addFlag (const Queued) firstNode])
         flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
+        firstNode = head . labNodes $ graph
+
+type DFSParams a = ((LNode a -> Bool), [LNode (a,Flag)])
+
+dfsStep :: Eq a => Ord a => AlgStep (a, Flag) b (DFSParams a) (Maybe (LNode a))
+-- dfs has params
+-- (LNode a -> Bool), a function that checks if the found node is the one were looking for
+-- [LNode (a,Bool)], a stack
+-- returns the node if it finds one.
+dfsStep = Step dfsStep'
+
+-- Change labeling to label as explored when dequeued for nicer visualization.
+dfsStep' :: (Eq a) => Ord a =>
+        DFSParams a ->
+        Gr (a, Flag) b ->
+        Either (Maybe (LNode a)) (Gr (a, Flag) b, DFSParams a)
+dfsStep' (p, []) graph = Left Nothing
+dfsStep' (p, q@(n,l'):qs) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+                           | otherwise          = Right (newGraph, newParams)
+  where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
+        newGraph = nmap f graph
+        f l@(label, Queued)     = if l == l' then l else (label, Explored)
+        f l@(label, Unexplored) = if l == l' then (label, Queued) else l
+        f l = l
+        --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
+        newParams = (p, unexploredNodes ++ qs)
+        --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
+        unexploredNodes = sortOn fst $ filter (\x -> getFlag x == Unexplored) $ listOutNeighbors graph $ fst q
+
+
+-- runs the dfs algorithm by calling run with the right parameters
+dfsRun :: Eq a => Ord a => (LNode a -> Bool) -> Gr a b -> Maybe (LNode a)
+dfsRun p graph = run dfsStep params flaggedGraph
+  where params = (p, [addFlag (const Queued) firstNode])
+        flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued) else (x,Unexplored)) graph
         firstNode = head . labNodes $ graph

@@ -33,6 +33,7 @@ getAlgorithm = do
 
 returnAlg "" = (bfsStep, bfsViz)
 returnAlg "BFS" = (bfsStep, bfsViz)
+returnAlg "DFS" = (dfsStep, bfsViz)
 returnAlg _ = error "Algorithm not found"
 
 mainGif :: IO ()

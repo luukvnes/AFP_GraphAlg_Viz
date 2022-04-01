@@ -43,14 +43,14 @@ incrementFolderName str = show (read str +1)
 createFolderStructure :: IO ()
 createFolderStructure = do
     exists <- doesDirectoryExist "resultFolder"
-    unless exists (createDirectory "resultFolder")
+    unless exists $ createDirectory "resultFolder"
     exists <- doesDirectoryExist "resultFolder/gifResults"
-    unless exists (createDirectory "resultFolder/gifResults")
+    unless exists $ createDirectory "resultFolder/gifResults"
     exists <- doesDirectoryExist "resultFolder/ImageFolders"
-    unless exists (createDirectory "resultFolder/ImageFolders")
+    unless exists $ createDirectory "resultFolder/ImageFolders"
     dirs <- listDirectory "resultFolder/ImageFolders"
     let isDirEmpty =  null dirs
-    if isDirEmpty then createDirectory "resultFolder/ImageFolders/1" else createDirectory ("resultFolder/ImageFolders/" ++ incrementFolderName (head dirs))
+    if isDirEmpty then createDirectory "resultFolder/ImageFolders/1" else createDirectory $ "resultFolder/ImageFolders/" ++ incrementFolderName (head dirs)
 
 getGifPath :: IO String
 getGifPath = do
@@ -63,10 +63,10 @@ retrieveDefaultGif = do
     let lastFile = if null gifFiles then "0.gif" else head gifFiles
     return $ "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"
 
-getGraphPath :: IO (Gr String String)
+getGraph :: IO (Gr String String)
 getGraph = do
     line <- getLine
     let location = if line == "" then "graphs/default.txt" else line
     handle <- openFile location ReadMode
     contents <- hGetContents handle
-    return (parseGraph contents)
+    return $ parseGraph contents
