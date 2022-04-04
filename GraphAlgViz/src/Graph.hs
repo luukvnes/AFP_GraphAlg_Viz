@@ -38,3 +38,13 @@ listOutNeighbors gr n = foldMap f [ (i, lab gr i) | i <- ns]
     where ns = suc gr n
           f (i, Just l) = [(i, l)]
           f (_, Nothing) = []
+
+listInNeighbors :: Graph gr => gr a b -> Node -> [LNode a]
+listInNeighbors gr n = foldMap f [ (i, lab gr i) | i <- ns]
+    where ns = pre gr n
+          f (i, Just l) = [(i, l)]
+          f (_, Nothing) = []
+
+listNodes :: Gr a b -> [LNode a]
+listNodes graph = ufold f [] graph
+  where f (_, i, l, _) xs = (i,l) : xs

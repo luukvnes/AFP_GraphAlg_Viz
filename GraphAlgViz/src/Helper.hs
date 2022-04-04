@@ -4,13 +4,13 @@ import Data.List.Split
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 import System.Directory
-import System.IO  
+import System.IO
 import Control.Monad
 import Graph
 data Flag = Unexplored
           | Explored
           | Queued
-          deriving (Show, Eq)
+          deriving (Show, Eq, Ord)
 
 --Helper functions for manipulating flags in node labels
 --add a boolean flag to the label type using a tuple and a function from nodes to booleans
@@ -58,7 +58,7 @@ getGifPath = do
     if line == "" then retrieveDefaultGif else return line
 
 retrieveDefaultGif :: IO [Char]
-retrieveDefaultGif = do 
+retrieveDefaultGif = do
     gifFiles <- listDirectory "resultFolder/gifResults"
     let lastFile = if null gifFiles then "0.gif" else head gifFiles
     return $ "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"

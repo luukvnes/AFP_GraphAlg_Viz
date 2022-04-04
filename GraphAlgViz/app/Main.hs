@@ -4,6 +4,8 @@ import Data.GraphViz
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 
+import qualified Data.Map as M
+
 import Algorithms
 import Visualization
 import Graph
