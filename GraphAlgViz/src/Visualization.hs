@@ -35,10 +35,10 @@ runAndViz algStep algViz params graph = case step algStep params graph of
                                         Left r -> print "Final graph" >> visualize algViz graph
                                         Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
 
-runAndPrettyPrint :: (Show r, Show a, Show b) => AlgStep a b p r -> p -> Gr a b -> IO ()
+runAndPrettyPrint :: (Show r, Show a, Show b, Show p) => AlgStep a b p r -> p -> Gr a b -> IO ()
 runAndPrettyPrint algStep params graph = case step algStep params graph of
                                               Left r -> print "Final graph" >> prettyPrint graph >> (print ("Result is: " ++ show r))
-                                              Right (newGraph, newParams) -> prettyPrint graph >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
+                                              Right (newGraph, newParams) -> prettyPrint graph >> print newParams >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
 
 -- bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
 bfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b

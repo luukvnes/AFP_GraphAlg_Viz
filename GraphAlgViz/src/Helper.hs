@@ -28,6 +28,20 @@ getFlag (_,(_,f)) = f
 removeFlag :: LNode (a,Flag) -> LNode a
 removeFlag (n,(l,_)) = (n,l)
 
+--Helper functions for manipulating flags in node labels for SCC
+--add a boolean flag to the label type using a tuple and a function from nodes to booleans
+addFlagSCC :: (LNode a -> Flag) -> LNode a -> LNode (a,Flag, Int)
+addFlagSCC p n@(node,label) = (node, (label,p n,-1))
+--extract a boolean flag from a node
+getFlagSCC :: LNode (a,Flag, Int) -> Flag
+getFlagSCC (_,(_,f,_)) = f
+
+--remove a flag from a node.
+removeFlagSCC :: LNode (a,Flag, Int) -> LNode a
+removeFlagSCC (n,(l,_,_)) = (n,l)
+
+fstT :: (a, b, c) -> a
+fstT (a, b, c) = a
 
 incrementFileName :: String -> String -> String
 incrementFileName str extension = show (read (dropExtension str) + 1) ++ extension

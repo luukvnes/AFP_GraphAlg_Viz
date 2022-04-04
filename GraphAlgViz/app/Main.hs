@@ -12,7 +12,7 @@ import Helper
 
 main :: IO ()
 main = do
-
+  
   putStrLn  "Give the relative path for the gif (default: './resultFolder/gifResults/{n}.gif')"
   gifPath <- getGifPath
   putStrLn  "Give the relative path for the graph you want to use (default: './graphs/default.txt')"
@@ -47,13 +47,24 @@ mainGif = do
   gifPath <- getGifPath
   attemptToCreateGif gifPath
 
-graph = fromEdgeList [(1,2,""),
+-- graph = fromEdgeList [(1,2,""),
+--                       (2,1,""),
+--                       (2,3,""),
+--                       (4,3,""),
+--                       (1,4,""),
+--                       (4,5,""),
+--                       (5,6,""),
+--                       (6,3,""),
+--                       (6,7,""),
+--                       (7,1,"")]
+
+graph = fromEdgeList [(0,2,""),
+                      (0,3,""),
                       (2,1,""),
-                      (2,3,""),
-                      (4,3,""),
-                      (1,4,""),
-                      (4,5,""),
-                      (5,6,""),
-                      (6,3,""),
-                      (6,7,""),
-                      (7,1,"")]
+                      (1,0,""),
+                      (3,4,"")]
+mainConsole= do
+  let firstNode = head . labNodes $ graph
+  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued,-1) else (x,Unexplored,-1)) graph
+  let params = (1, 0, [], [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
+  runAndPrettyPrint sccStep params flaggedGraph

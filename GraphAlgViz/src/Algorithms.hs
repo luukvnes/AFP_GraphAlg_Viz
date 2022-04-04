@@ -208,3 +208,108 @@ dijkStep' (q, dists) graph = Right (graph, newParams)
 dijkRun :: Eq a => LNode a -> Gr a b -> DistList a
 dijkRun n graph = run dijkStep params graph
   where params = undefined
+
+
+------------------SCC--------------------------------------------
+
+{-
+1  function SCC(Graph, source):
+2
+3      DFS (restarting at unexplored vertices) adding vertices to a stack whenever they have no unexplored vertices
+4      reverse all edge directions
+5      DFS restarting at unexplored vertex top of the stack, every vertex you discover from a single starting vertex belongs to scc 
+-}
+
+
+-- step1, id of when node was put in stack, scc stack, current path (as a stack), next node,
+-- step2, _
+-- step3, current component ID, scc stack, dfs stack, next node
+-- Step, stack, next node
+type SCCParams a = (Int, Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a))
+
+type S a = [LNode a]
+type SCCFlagNode a = (a, Flag, Int)
+
+sccStep :: Eq a =>  Ord a => AlgStep (SCCFlagNode a) b (SCCParams a) (Int)
+sccStep = Step sccStep'
+
+sccStep' :: Eq a => Ord a => SCCParams a -> Gr (SCCFlagNode a) b -> Either (Int) (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep' (1, sccID, a, b, c) graph = Right ( sccStep1' (sccID,a, b, c) graph)
+sccStep' (2, _, stack, _, _) graph = Right (sccStep2' stack graph)
+sccStep' (3, sccID, a, b, _) graph = sccStep3' (sccID,a, b) graph
+
+
+sccStep1' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep1' (sccID, ss, oldPath@(p1:p2:ps), (n,l')) graph = (newGraph, newParams)
+    where
+        newGraph = nmap f graph
+        f l@(label, Queued, _)     = if l == l' && null unexploredNodes then l else (label, Explored, sccID)
+        f l@(label, Unexplored, _) = if l == l' then (label, Queued, -1) else l
+        f l = l
+        -- newParams :: SCCParams a
+        newParams = if null unexploredNodes
+            then (1, sccID +1, p1:ss, p2:ps, p2)
+            else (1, sccID, ss, head unexploredNodes:oldPath, head unexploredNodes)
+        -- unexploredNodes :: [LNode (a, Flag)]
+        unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+-- if path is empty try to find new starting node, if not found go to step 2
+sccStep1' (sccID, ss, [p1], (n,l')) graph = (newGraph, newParams)
+    where
+        newGraph = nmap f graph
+        f l@(label, Queued, _)     = if l == l' && null unexploredNodes then l else (label, Explored, sccID)
+        f l@(label, Unexplored, _) = if l == l' then (label, Queued, -1) else l
+        f l = l
+        -- newParams :: SCCParams a
+        newParams = if null unexploredNodes
+            then (2, sccID+1, p1:ss, [], p1) -- third and fourth params dont matter in this case
+            else (1, sccID, ss, head unexploredNodes:[p1], head unexploredNodes)
+        -- unexploredNodes :: [LNode (a, Flag)]
+        unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+
+sccStep2' :: Eq a => Ord a => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
+    where
+        newGraph = fromEdgeList newEdgeList
+        -- flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) newGraph
+        newEdgeList = map (labelEdge graph) (labEdges graph)
+        firstNode = removeFlagSCC s
+        newParams = (3, 0, s:ss, [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
+
+sccStep3' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep3' (sccID, ss, q@(n,l'):qs) graph = Right (newGraph, newParams)
+    where
+        newGraph = nmap f graph
+        f l@(label, Queued, _)     = if l == l' then l else (label, Explored,sccID)
+        f l@(label, Unexplored, _) = if l == l' then (label, Queued,-1) else l
+        f l = l
+        -- TODO remove l' from stack
+        newParams = (3, sccID, removeFromStack ss, unexploredNodes ++ qs,(n,l'))
+        removeFromStack [] = []
+        removeFromStack (x@(n',_):ss)
+                | n' == n = ss
+                | otherwise = x : removeFromStack ss
+        unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+
+
+
+sccStep3' (sccID, (n,l'@(label, _,_)):ss, []) graph = Right (newGraph, newParams)
+    where
+        newGraph = nmap f graph
+        f l@(label, Queued,_)     = if l == l' then l else (label, Explored,sccID)
+        f l@(label, Unexplored,_) = if l == l' then (label, Queued,sccID+1) else l
+        f l = l
+        -- newParams :: SCCParams a
+        newParams = (3, sccID+1, ss, [(n,(label, Queued, sccID+1))], (n,l'))
+sccStep3' (sccID, [], []) graph = Left 1
+
+-- for some reason putting this in the where clause does not work
+createFlaggedGraph :: Eq a => Gr a b -> (Node, a) -> Gr (SCCFlagNode a) b
+createFlaggedGraph graph firstNode = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued, -1) else (x,Unexplored, -1)) graph
+
+-- given a graph and an edge transform it to an edgelist value
+labelEdge :: Eq a => Gr (SCCFlagNode a) b -> (Node, Node, b) -> (a, a, b)
+labelEdge graph (from, to, label) = case lab graph from of
+        Just x -> case lab graph to of
+                Just y -> (fstT y, fstT x, label)
+                Nothing -> error "no label found"
+        Nothing -> error "no label found"
