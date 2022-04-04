@@ -23,15 +23,6 @@ newtype AlgStep a b p r = Step {step :: p -> Gr a b -> Either r (Gr a b, p)}
 instance Functor (AlgStep a b p) where
   fmap f (Step alg) = Step $ \params graph -> first f $ alg params graph
 
-instance Applicative (AlgStep a b p) where
-  pure r = Step (\_ _ -> Left r)
-  -- If both return a result, then apply the function to the result.
-  (Step f) <*> (Step x) = Step $ \p g -> case (f p g, x p g) of
-                                              (Left function, Left result) -> Left $ function result
-                                              (Left function, Right x) -> Right x
-                                              (Right x, Left result) -> Right x
-                                              (Right x, Right y) -> Right x
-
 
 --executes step until it reaches a result.
 run :: AlgStep a b p r -> p -> Gr a b -> r
@@ -178,36 +169,55 @@ dfsRun p graph = run dfsStep params flaggedGraph
 19      return dist[], prev[]
 -}
 
+--parameters passed around are a queue and a distance list
 type DijkParams a = (Q a, DistList a)
 
-type DistList a = M.Map (LNode a) (Int, LNode a)
-type Q a = [LNode a]
+--distance list is a dictionary storing a node, together wits its distaance to the source and the preveous node on the route
+type DistList a = M.Map (LNode (a, Flag)) (Int, LNode (a, Flag))
+type Q a = [LNode (a, Flag)]
 
-dijkStep :: Eq a => AlgStep a b (DijkParams a) (DistList a)
-dijkStep = Step dijkStep'
+dijkStep :: Eq a => AlgStep (a, Flag) b (DijkParams a) [(LNode a, Int, LNode a)]
+dijkStep = fmap f $ Step dijkStep'
+  --map f to format the output a little bit
+  where f = map (\(node, (dist, prev)) -> (removeFlag node, dist, removeFlag prev)) . M.toAscList
 
-dijkStep' :: Eq a => DijkParams a -> Gr a b -> Either (DistList a) (Gr a b, DijkParams a)
+dijkStep' :: Eq a => DijkParams a -> Gr (a, Flag) b -> Either (DistList a) (Gr (a, Flag) b, DijkParams a)
 --if the queue is empty, return the distance and preveous lists.
 dijkStep' ([], dists) graph = Left dists
-dijkStep' (q, dists) graph = Right (graph, newParams)
+dijkStep' (q, dists) graph = Right (newGraph, newParams)
   where --find the node with minimal distance in the queue
-        minDistNode' = foldr1 minTuple . filter ((flip elem) q . fst) . M.toList $ dists
+        minDistInfo = foldr1 minTuple . filter ((flip elem) q . fst) . M.toList $ dists
         minTuple x@(_,(d,_)) y@(_,(d',_)) = if d < d' then x else y
         --extract the actual node and the distance
-        minDistNode = fst minDistNode'
-        minDist = fst . snd $ minDistNode'
+        minDistNode = fst minDistInfo
+        minDist = fst . snd $ minDistInfo
         --get all the neighbours in the queue
-        neighbors = filter ((flip elem) q) $ listNeighbors graph $ fst minDistNode
+        neighbors = filter ((flip elem) q) $ listOutNeighbors graph $ fst minDistNode
         --check if there is a shorter path using f and update accordingly
+        --use of `listNeighbors` instead of `listOutNeighbours` makes this algorithm undirected.
         newDists = M.mapWithKey f dists
         f n (i,x) = if p n (i,x) then (1 + minDist, minDistNode) else (i,x)
         p n (i,x) = n `elem` neighbors && (i > (1 + minDist))
         newParams = (delete minDistNode q, newDists)
+        -- update flags. If the node is queued then mark it explored. Mark the next node as queued and keep all other labels the same.
+        newGraph = nmap updateFlag graph
+        updateFlag l | l == snd minDistNode = (fst l, Queued) --set the node to queued if it is the current node
+        updateFlag l | snd l == Queued      = (fst l, Explored) --if the node was preveously queued, set it to explored
+        updateFlag l | otherwise            = (fst l, snd l) --otherwise, keep the same flag.
 
 
-dijkRun :: Eq a => LNode a -> Gr a b -> DistList a
-dijkRun n graph = run dijkStep params graph
-  where params = undefined
+
+
+dijkRun :: (Eq a, Ord a) => LNode a -> Gr a b -> [(LNode a, Int, LNode a)]
+dijkRun node@(i,l) graph = run dijkStep params flaggedGraph
+  where params             = (q, dists)
+        -- initial queue consists of all nodes
+        q                  = listNodes flaggedGraph
+        -- distances are unexplored, except for the source node.
+        dists              = M.mapWithKey f $ M.fromList $ zip q (repeat (maxBound, (i,(l,Unexplored))))
+        f (i,(l,Queued)) _ = (0, (i,(l,Unexplored)))
+        f _              v = v
+        flaggedGraph       = nmap (\x -> if x == l then (x,Queued) else (x,Unexplored)) graph
 
 
 ------------------SCC--------------------------------------------
@@ -313,3 +323,4 @@ labelEdge graph (from, to, label) = case lab graph from of
                 Just y -> (fstT y, fstT x, label)
                 Nothing -> error "no label found"
         Nothing -> error "no label found"
+        
