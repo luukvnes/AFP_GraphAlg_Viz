@@ -1,5 +1,6 @@
 module Helper where
 
+import Data.List
 import Data.List.Split
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
@@ -44,27 +45,41 @@ fstT :: (a, b, c) -> a
 fstT (a, b, c) = a
 
 incrementFileName :: String -> String -> String
-incrementFileName str extension = show (read (dropExtension str) + 1) ++ extension
+incrementFileName str extension = zeros ++ resNString ++ extension
+    where
+        resNString :: String
+        resNString = show (read (dropExtension str) + 1)
+        zeros :: String
+        zeros = replicate (4 - length resNString) '0'
 
-dropExtension str = reverse (dropExtension' (reverse str))
-dropExtension' [] = []
-dropExtension' ('.':xs) = xs
-dropExtension' (x:xs) = dropExtension' xs
+-- dropExtension str = reverse (dropExtension' (reverse str))
+dropExtension [] = []
+dropExtension ('.':xs) = []
+dropExtension (x:xs) = x : dropExtension xs
 
 incrementFolderName :: String -> String
-incrementFolderName str = show (read str +1)
+incrementFolderName str = zeros ++ resNString
+    where
+        resNString :: String
+        resNString = show (read (dropExtension str) + 1)
+        zeros :: String
+        zeros = replicate (4 - length resNString) '0'
 
 createFolderStructure :: IO ()
 createFolderStructure = do
     exists <- doesDirectoryExist "resultFolder"
     unless exists $ createDirectory "resultFolder"
+    print "asdg"
     exists <- doesDirectoryExist "resultFolder/gifResults"
+    print "asdg"
     unless exists $ createDirectory "resultFolder/gifResults"
+    print "2"
     exists <- doesDirectoryExist "resultFolder/ImageFolders"
+    print "3"
     unless exists $ createDirectory "resultFolder/ImageFolders"
     dirs <- listDirectory "resultFolder/ImageFolders"
     let isDirEmpty =  null dirs
-    if isDirEmpty then createDirectory "resultFolder/ImageFolders/1" else createDirectory $ "resultFolder/ImageFolders/" ++ incrementFolderName (head dirs)
+    if isDirEmpty then createDirectory "resultFolder/ImageFolders/0000" else createDirectory $ "resultFolder/ImageFolders/" ++ incrementFolderName (last (sort dirs))
 
 getGifPath :: IO String
 getGifPath = do
@@ -74,7 +89,7 @@ getGifPath = do
 retrieveDefaultGif :: IO [Char]
 retrieveDefaultGif = do
     gifFiles <- listDirectory "resultFolder/gifResults"
-    let lastFile = if null gifFiles then "0.gif" else head gifFiles
+    let lastFile = if null gifFiles then "0000.gif" else last (sort gifFiles)
     return $ "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"
 
 getGraph :: IO (Gr String String)

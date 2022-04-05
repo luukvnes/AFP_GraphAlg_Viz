@@ -14,7 +14,7 @@ import Helper
 
 main :: IO ()
 main = do
-  
+  createFolderStructure
   putStrLn  "Give the relative path for the gif (default: './resultFolder/gifResults/{n}.gif')"
   gifPath <- getGifPath
   putStrLn  "Give the relative path for the graph you want to use (default: './graphs/default.txt')"
@@ -25,7 +25,6 @@ main = do
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
   let p n@(i,l) = l == "7"
   let params = (p, [addFlag (const Queued) firstNode])
-  createFolderStructure
   runAndViz algorithm visualizer params flaggedGraph
   attemptToCreateGif gifPath
 
@@ -49,16 +48,23 @@ mainGif = do
   gifPath <- getGifPath
   attemptToCreateGif gifPath
 
--- graph = fromEdgeList [(1,2,""),
---                       (2,1,""),
---                       (2,3,""),
---                       (4,3,""),
---                       (1,4,""),
---                       (4,5,""),
---                       (5,6,""),
---                       (6,3,""),
---                       (6,7,""),
---                       (7,1,"")]
+-- graph = fromEdgeList [(1, 2, "A"),
+--   (2, 1, "B"),
+--   (2, 3, "C"),
+--   (4, 3, "D"),
+--   (1, 4, "E"),
+--   (4, 5, "F"),
+--   (5, 6, "G"),
+--   (6, 3, "H"),
+--   (6, 7, "I"),
+--   (7, 8, "J"),
+--   (3, 9, "J1"),
+--   (4, 9, "J2"),
+--   (10, 11, "J3"),
+--   (11, 12, "J4"),
+--   (11, 13, "J5"),
+--   (1, 13, "J6"),
+--   (3, 13, "J7")]
 
 graph = fromEdgeList [(0,2,""),
                       (0,3,""),

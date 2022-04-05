@@ -13,6 +13,7 @@ import Data.Text.Lazy (pack)
 
 import Algorithms
 import Helper
+import Data.List
 
 newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 
@@ -22,7 +23,8 @@ visualize (Viz alg) graph = do
     dirs <- listDirectory "resultFolder/ImageFolders"
     let dir = head dirs
     files <- listDirectory ("resultFolder/ImageFolders/" ++ dir)
-    let lastFile = if null files then "0.bmp" else head files
+    let lastFile = if null files then "0.bmp" else last (sort files)
+    print lastFile
     let newFileName = "resultFolder/ImageFolders/" ++ dir ++ "/" ++ incrementFileName lastFile ".bmp"
     str <- runGraphviz (alg graph) Bmp newFileName
     putStrLn str

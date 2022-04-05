@@ -83,17 +83,17 @@ bfsStep' :: (Eq a) =>
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, BFSParams a)
 bfsStep' (p, []) graph = Left Nothing
-bfsStep' (p, (q@(n,l'):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+bfsStep' (p, (q@(n,(label', l')):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
                                   | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
-        f l@(label, Queued)     = if l == l' then l else (label, Explored)
-        f l@(label, Unexplored) = if l == l' then (label, Queued) else l
+        f l@(label, Queued)     = if label == label' then (label, Explored) else l
+        f l@(label, Unexplored) = if label `elem` (map (fst.snd) unexploredNodes) then (label, Queued) else l
         f l = l
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, qs ++ unexploredNodes)
         --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
-        unexploredNodes = filter (\x -> getFlag x == Unexplored) $ listOutNeighbors graph $ fst q
+        unexploredNodes = sortOn fst $ filter (\x -> getFlag x == Unexplored) $ listOutNeighbors graph $ fst q
 
 
 -- runs the bfs algorithm by calling run with the right parameters
@@ -122,12 +122,12 @@ dfsStep' :: (Eq a) => Ord a =>
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, DFSParams a)
 dfsStep' (p, []) graph = Left Nothing
-dfsStep' (p, q@(n,l'):qs) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
-                           | otherwise          = Right (newGraph, newParams)
+dfsStep' (p,(q@(n,(label', l')):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+                                | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
-        f l@(label, Queued)     = if l == l' then l else (label, Explored)
-        f l@(label, Unexplored) = if l == l' then (label, Queued) else l
+        f l@(label, Queued)     = if label == label' then (label, Explored) else l
+        f l@(label, Unexplored) = if label `elem` (map (fst.snd) unexploredNodes) then (label, Queued) else l
         f l = l
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, unexploredNodes ++ qs)
