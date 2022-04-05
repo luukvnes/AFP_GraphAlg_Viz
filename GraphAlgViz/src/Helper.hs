@@ -69,13 +69,9 @@ createFolderStructure :: IO ()
 createFolderStructure = do
     exists <- doesDirectoryExist "resultFolder"
     unless exists $ createDirectory "resultFolder"
-    print "asdg"
     exists <- doesDirectoryExist "resultFolder/gifResults"
-    print "asdg"
     unless exists $ createDirectory "resultFolder/gifResults"
-    print "2"
     exists <- doesDirectoryExist "resultFolder/ImageFolders"
-    print "3"
     unless exists $ createDirectory "resultFolder/ImageFolders"
     dirs <- listDirectory "resultFolder/ImageFolders"
     let isDirEmpty =  null dirs

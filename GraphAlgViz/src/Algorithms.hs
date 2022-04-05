@@ -9,6 +9,7 @@ import qualified Data.Map as M
 
 import Graph
 import Helper
+import GHC.Base (undefined)
 
 newtype AlgStep a b p r = Step {step :: p -> Gr a b -> Either r (Gr a b, p)}
 {- Parameterized by
@@ -283,7 +284,7 @@ sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
         -- flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) newGraph
         newEdgeList = map (labelEdge graph) (labEdges graph)
         firstNode = removeFlagSCC s
-        newParams = (3, 0, s:ss, [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
+        newParams = (3, 5, s:ss, [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
 
 sccStep3' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep3' (sccID, ss, q@(n,l'):qs) graph = Right (newGraph, newParams)
@@ -310,7 +311,14 @@ sccStep3' (sccID, (n,l'@(label, _,_)):ss, []) graph = Right (newGraph, newParams
         f l = l
         -- newParams :: SCCParams a
         newParams = (3, sccID+1, ss, [(n,(label, Queued, sccID+1))], (n,l'))
-sccStep3' (sccID, [], []) graph = Left 1
+sccStep3' (-2, [], []) graph = Left 1
+sccStep3' (_, [], []) graph = Right (newGraph, newParams)
+    where
+        newGraph = nmap f graph
+        f l@(label, Queued,sccID)     =(label, Explored,sccID+1)
+        f l = l
+        -- newParams :: SCCParams a
+        newParams = (3, -2, [], [], undefined)
 
 -- for some reason putting this in the where clause does not work
 createFlaggedGraph :: Eq a => Gr a b -> (Node, a) -> Gr (SCCFlagNode a) b

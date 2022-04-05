@@ -67,3 +67,33 @@ bfsViz' graph = setDirectedness graphToDot params graph
 
 dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 dfsViz = bfsViz
+
+sccViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag, Int) b
+sccViz = Viz sccViz'
+
+sccViz' :: (Show a, Ord b) => Gr (a, Flag, Int) b -> DotGraph Node
+sccViz' graph = setDirectedness graphToDot params graph
+  where
+    params = blankParams { globalAttributes = []
+                         , clusterBy        = clustBy
+                         , clusterID        = Num . Int
+                         , isDotCluster     = const True
+                         , fmtCluster       = const []
+                         , fmtNode          = fmtNode
+                         , fmtEdge          = const []
+                         }
+    clustBy (n,l) = C 1 $ N (n,l)
+    fmtNode (n, (l, Unexplored, s)) = [Color [WC (X11Color Blue) Nothing], label l ]
+    fmtNode (n, (l, Queued, s)) = [Color [WC (X11Color Red) Nothing], label l ]
+    fmtNode (a, (l, Explored, 0)) = [Color [WC (X11Color DarkSeaGreen) Nothing], label l ]
+    fmtNode (a, (l, Explored, 1)) = [Color [WC (X11Color DarkSeaGreen1) Nothing], label l ]
+    fmtNode (a, (l, Explored, 2)) = [Color [WC (X11Color DarkSeaGreen2) Nothing], label l ]
+    fmtNode (a, (l, Explored, 3)) = [Color [WC (X11Color DarkSeaGreen3) Nothing], label l ]
+    fmtNode (a, (l, Explored, 4)) = [Color [WC (X11Color DarkSeaGreen4) Nothing], label l ]
+    fmtNode (a, (l, Explored, 5)) = [Color [WC (X11Color Yellow) Nothing], label l ]
+    fmtNode (a, (l, Explored, 6)) = [Color [WC (X11Color Purple) Nothing], label l ]
+    fmtNode (a, (l, Explored, 7)) = [Color [WC (X11Color Navy) Nothing], label l ]
+    fmtNode (a, (l, Explored, 8)) = [Color [WC (X11Color DarkSeaGreen3) Nothing], label l ]
+
+    label :: Show a => a -> Attribute
+    label = Label . StrLabel . pack . filter (/='"') . show
