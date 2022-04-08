@@ -14,6 +14,7 @@ import Data.Text.Lazy (pack)
 import Algorithms
 import Helper
 import Data.List
+import GHC.Word
 
 newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 
@@ -85,15 +86,27 @@ sccViz' graph = setDirectedness graphToDot params graph
     clustBy (n,l) = C 1 $ N (n,l)
     fmtNode (n, (l, Unexplored, s)) = [Color [WC (X11Color Blue) Nothing], label l ]
     fmtNode (n, (l, Queued, s)) = [Color [WC (X11Color Red) Nothing], label l ]
-    fmtNode (a, (l, Explored, 0)) = [Color [WC (X11Color DarkSeaGreen) Nothing], label l ]
-    fmtNode (a, (l, Explored, 1)) = [Color [WC (X11Color DarkSeaGreen1) Nothing], label l ]
-    fmtNode (a, (l, Explored, 2)) = [Color [WC (X11Color DarkSeaGreen2) Nothing], label l ]
-    fmtNode (a, (l, Explored, 3)) = [Color [WC (X11Color DarkSeaGreen3) Nothing], label l ]
-    fmtNode (a, (l, Explored, 4)) = [Color [WC (X11Color DarkSeaGreen4) Nothing], label l ]
-    fmtNode (a, (l, Explored, 5)) = [Color [WC (X11Color Yellow) Nothing], label l ]
-    fmtNode (a, (l, Explored, 6)) = [Color [WC (X11Color Purple) Nothing], label l ]
-    fmtNode (a, (l, Explored, 7)) = [Color [WC (X11Color Navy) Nothing], label l ]
-    fmtNode (a, (l, Explored, 8)) = [Color [WC (X11Color DarkSeaGreen3) Nothing], label l ]
+    -- if in step 1
+    --    then we give it a green colour depending on when it was added to the stack
+    -- in step 3, 
+    --    then we give it a random colour from a list of fairly random colours.
+    fmtNode (a, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
+                                  | otherwise = [Color [WC (rgbFromStackID s) Nothing], label l ]
+
+
+    -- 20 colors to use to colours the stack
+    colorsForStack = [X11Color Brown, X11Color Aquamarine1, X11Color DarkOliveGreen, X11Color DarkOrange, X11Color DeepPink, X11Color Gold, X11Color IndianRed, X11Color OrangeRed, X11Color LawnGreen, X11Color Magenta, X11Color MediumPurple, X11Color Moccasin, X11Color OliveDrab, X11Color Purple, X11Color Salmon, X11Color Sienna, X11Color Tomato, X11Color Yellow, X11Color Violet, X11Color Turquoise, X11Color Thistle]
+
+    -- gets a green rgb value with its brightness depending on when a node was put in the stack
+    rgbFromStackID sid = RGB 0 (fromIntegral  ((((sid+1) * 200) `div` (sizeOfStack+1))+55)) 0
+
+    -- the size of sccStack
+    sizeOfStack = sizeOfStack' 1
+    sizeOfStack' n = if stackIDAssigned n (labNodes graph) then sizeOfStack' (n+1) else n-1
+
+    -- wether the sid given as paramater is in the graph
+    stackIDAssigned _ [] = False
+    stackIDAssigned sid1 ((_,(_,_,sid2)):xs) =  sid1 == sid2 || stackIDAssigned sid1 xs
 
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
