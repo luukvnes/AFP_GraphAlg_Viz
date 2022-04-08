@@ -29,24 +29,32 @@ main = do
   attemptToCreateGif gifPath
 
 -- Is not in helper.hs to avoid circular imports
+getAlgorithm :: IO
+                        (AlgStep
+                           ([Char], Flag) b (BFSParams [Char]) (Maybe (LNode [Char])),
+                         AlgorithmViz ([Char], Flag) String)
 getAlgorithm = do
     returnAlg <$> getLine
 
+returnAlg :: (Show a1, Ord b1, Ord a2, Eq a1) =>
+                   [Char]
+                   -> (AlgStep (a2, Flag) b2 (BFSParams a2) (Maybe (LNode a2)),
+                       AlgorithmViz (a1, Flag) b1)
 returnAlg "" = (bfsStep, bfsViz)
 returnAlg "BFS" = (bfsStep, bfsViz)
 returnAlg "DFS" = (dfsStep, bfsViz)
 returnAlg _ = error "Algorithm not found"
 
-mainGif :: IO ()
-mainGif = do
-  let firstNode = head . labNodes $ graph
-  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-  let p n@(i,l) = l == 7
-  let params = (p, [addFlag (const Queued) firstNode])
-  createFolderStructure
-  runAndViz bfsStep bfsViz params flaggedGraph
-  gifPath <- getGifPath
-  attemptToCreateGif gifPath
+-- mainGif :: IO ()
+-- mainGif = do
+--   let firstNode = head . labNodes $ graph
+--   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
+--   let p n@(i,l) = l == 7
+--   let params = (p, [addFlag (const Queued) firstNode])
+--   createFolderStructure
+--   runAndViz bfsStep bfsViz params flaggedGraph
+--   gifPath <- getGifPath
+--   attemptToCreateGif gifPath
 
 -- graph = fromEdgeList [(1, 2, "A"),
 --   (2, 1, "B"),
@@ -65,12 +73,14 @@ mainGif = do
 --   (11, 13, "J5"),
 --   (1, 13, "J6"),
 --   (3, 13, "J7")]
-
+graph :: Gr Integer [Char]
 graph = fromEdgeList [(0,2,""),
                       (0,3,""),
                       (2,1,""),
                       (1,0,""),
                       (3,4,"")]
+
+mainConsole :: IO ()
 mainConsole= do
   let firstNode = head . labNodes $ graph
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued,-1) else (x,Unexplored,-1)) graph

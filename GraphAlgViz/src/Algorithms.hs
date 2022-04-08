@@ -83,8 +83,8 @@ bfsStep' :: (Eq a) =>
         BFSParams a ->
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, BFSParams a)
-bfsStep' (p, []) graph = Left Nothing
-bfsStep' (p, (q@(n,(label', l')):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+bfsStep' (_, []) _ = Left Nothing
+bfsStep' (p, (q@(_,(label', _)):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
                                   | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
@@ -122,13 +122,13 @@ dfsStep' :: (Eq a) => Ord a =>
         DFSParams a ->
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, DFSParams a)
-dfsStep' (p, []) graph = Left Nothing
-dfsStep' (p,(q@(n,(label', l')):qs)) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
+dfsStep' (_, []) _ = Left Nothing
+dfsStep' (p,q@(_,(label', _)):qs) graph | p . removeFlag $ q = Left . Just . removeFlag $ q
                                 | otherwise          = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
         f l@(label, Queued)     = if label == label' then (label, Explored) else l
-        f l@(label, Unexplored) = if label `elem` (map (fst.snd) unexploredNodes) then (label, Queued) else l
+        f l@(label, Unexplored) = if label `elem` map (fst.snd) unexploredNodes then (label, Queued) else l
         f l = l
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, unexploredNodes ++ qs)
@@ -184,7 +184,7 @@ dijkStep = fmap f $ Step dijkStep'
 
 dijkStep' :: Eq a => DijkParams a -> Gr (a, Flag) b -> Either (DistList a) (Gr (a, Flag) b, DijkParams a)
 --if the queue is empty, return the distance and preveous lists.
-dijkStep' ([], dists) graph = Left dists
+dijkStep' ([], dists) _ = Left dists
 dijkStep' (q, dists) graph = Right (newGraph, newParams)
   where --find the node with minimal distance in the queue
         minDistInfo = foldr1 minTuple . filter ((flip elem) q . fst) . M.toList $ dists
@@ -198,7 +198,7 @@ dijkStep' (q, dists) graph = Right (newGraph, newParams)
         --use of `listNeighbors` instead of `listOutNeighbours` makes this algorithm undirected.
         newDists = M.mapWithKey f dists
         f n (i,x) = if p n (i,x) then (1 + minDist, minDistNode) else (i,x)
-        p n (i,x) = n `elem` neighbors && (i > (1 + minDist))
+        p n (i,_) = n `elem` neighbors && (i > (1 + minDist))
         newParams = (delete minDistNode q, newDists)
         -- update flags. If the node is queued then mark it explored. Mark the next node as queued and keep all other labels the same.
         newGraph = nmap updateFlag graph
@@ -210,13 +210,13 @@ dijkStep' (q, dists) graph = Right (newGraph, newParams)
 
 
 dijkRun :: (Eq a, Ord a) => LNode a -> Gr a b -> [(LNode a, Int, LNode a)]
-dijkRun node@(i,l) graph = run dijkStep params flaggedGraph
+dijkRun (i,l) graph = run dijkStep params flaggedGraph
   where params             = (q, dists)
         -- initial queue consists of all nodes
         q                  = listNodes flaggedGraph
         -- distances are unexplored, except for the source node.
         dists              = M.mapWithKey f $ M.fromList $ zip q (repeat (maxBound, (i,(l,Unexplored))))
-        f (i,(l,Queued)) _ = (0, (i,(l,Unexplored)))
+        f (i',(l',Queued)) _ = (0, (i',(l',Unexplored)))
         f _              v = v
         flaggedGraph       = nmap (\x -> if x == l then (x,Queued) else (x,Unexplored)) graph
 
@@ -248,6 +248,7 @@ sccStep' :: Eq a => Ord a => SCCParams a -> Gr (SCCFlagNode a) b -> Either (Int)
 sccStep' (1, sccID, a, b, c) graph = Right ( sccStep1' (sccID,a, b, c) graph)
 sccStep' (2, _, stack, _, _) graph = Right (sccStep2' stack graph)
 sccStep' (3, sccID, a, b, _) graph = sccStep3' (sccID,a, b) graph
+sccStep' _ _ = error "Wrong step number supplied"
 
 
 sccStep1' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
@@ -276,6 +277,7 @@ sccStep1' (sccID, ss, [p1], (n,l')) graph = (newGraph, newParams)
             else (1, sccID, ss, head unexploredNodes:[p1], head unexploredNodes)
         -- unexploredNodes :: [LNode (a, Flag)]
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+sccStep1' _ _ = error "this should not happen"
 
 sccStep2' :: Eq a => Ord a => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
@@ -285,9 +287,11 @@ sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
         newEdgeList = map (labelEdge graph) (labEdges graph)
         firstNode = removeFlagSCC s
         newParams = (3, 5, s:ss, [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
+sccStep2' _ _ = error "empty graph"
+
 
 sccStep3' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep3' (sccID, ss, q@(n,l'):qs) graph = Right (newGraph, newParams)
+sccStep3' (sccID, ss, (n,l'):qs) graph = Right (newGraph, newParams)
     where
         newGraph = nmap f graph
         f l@(label, Queued, _)     = if l == l' then l else (label, Explored,sccID)
@@ -296,9 +300,9 @@ sccStep3' (sccID, ss, q@(n,l'):qs) graph = Right (newGraph, newParams)
         -- TODO remove l' from stack
         newParams = (3, sccID, removeFromStack ss, unexploredNodes ++ qs,(n,l'))
         removeFromStack [] = []
-        removeFromStack (x@(n',_):ss)
+        removeFromStack (x@(n',_):stack)
                 | n' == n = ss
-                | otherwise = x : removeFromStack ss
+                | otherwise = x : removeFromStack stack
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 
 
@@ -311,11 +315,11 @@ sccStep3' (sccID, (n,l'@(label, _,_)):ss, []) graph = Right (newGraph, newParams
         f l = l
         -- newParams :: SCCParams a
         newParams = (3, sccID+1, ss, [(n,(label, Queued, sccID+1))], (n,l'))
-sccStep3' (-2, [], []) graph = Left 1
+sccStep3' (-2, [], []) _ = Left 1
 sccStep3' (_, [], []) graph = Right (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued,sccID)     =(label, Explored,sccID+1)
+        f (label, Queued,sccID)     =(label, Explored,sccID+1)
         f l = l
         -- newParams :: SCCParams a
         newParams = (3, -2, [], [], undefined)

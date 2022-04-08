@@ -35,7 +35,7 @@ visualize (Viz alg) graph = do
 --same as run, but prints the graph to the terminal at every step
 runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
 runAndViz algStep algViz params graph = case step algStep params graph of
-                                        Left r -> print "Final graph" >> visualize algViz graph
+                                        Left r -> print "Final graph" >> visualize algViz graph >> (print ("Result is: " ++ show r))
                                         Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
 
 runAndPrettyPrint :: (Show r, Show a, Show b, Show p) => AlgStep a b p r -> p -> Gr a b -> IO ()
@@ -59,9 +59,9 @@ bfsViz' graph = setDirectedness graphToDot params graph
                          , fmtEdge          = const []
                          }
     clustBy (n,l) = C 1 $ N (n,l)
-    fmtNode (n, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
-    fmtNode (n, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
-    fmtNode (a, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
+    fmtNode (_, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
+    fmtNode (_, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
+    fmtNode (_, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
 
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
@@ -84,13 +84,13 @@ sccViz' graph = setDirectedness graphToDot params graph
                          , fmtEdge          = const []
                          }
     clustBy (n,l) = C 1 $ N (n,l)
-    fmtNode (n, (l, Unexplored, s)) = [Color [WC (X11Color Blue) Nothing], label l ]
-    fmtNode (n, (l, Queued, s)) = [Color [WC (X11Color Red) Nothing], label l ]
+    fmtNode (_, (l, Unexplored, _)) = [Color [WC (X11Color Blue) Nothing], label l ]
+    fmtNode (_, (l, Queued, _)) = [Color [WC (X11Color Red) Nothing], label l ]
     -- if in step 1
     --    then we give it a green colour depending on when it was added to the stack
     -- in step 3, 
     --    then we give it a random colour from a list of fairly random colours.
-    fmtNode (a, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
+    fmtNode (_, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
                                   | otherwise = [Color [WC (rgbFromStackID s) Nothing], label l ]
 
 

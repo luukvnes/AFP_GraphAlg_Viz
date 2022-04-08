@@ -42,7 +42,7 @@ removeFlagSCC :: LNode (a,Flag, Int) -> LNode a
 removeFlagSCC (n,(l,_,_)) = (n,l)
 
 fstT :: (a, b, c) -> a
-fstT (a, b, c) = a
+fstT (a, _, _) = a
 
 incrementFileName :: String -> String -> String
 incrementFileName str extension = zeros ++ resNString ++ extension
@@ -52,9 +52,9 @@ incrementFileName str extension = zeros ++ resNString ++ extension
         zeros :: String
         zeros = replicate (4 - length resNString) '0'
 
--- dropExtension str = reverse (dropExtension' (reverse str))
+dropExtension :: String -> String
 dropExtension [] = []
-dropExtension ('.':xs) = []
+dropExtension ('.':_) = []
 dropExtension (x:xs) = x : dropExtension xs
 
 incrementFolderName :: String -> String
