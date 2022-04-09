@@ -84,6 +84,6 @@ mainConsole :: IO ()
 mainConsole= do
   let firstNode = head . labNodes $ graph
   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued,-1) else (x,Unexplored,-1)) graph
-  let params = (1, 0, [], [addFlagSCC (const Queued) firstNode], addFlagSCC (const Queued) firstNode)
+  let params = SOne 0 [] [addFlagSCC (const Queued) firstNode] (addFlagSCC (const Queued) firstNode)
   runAndViz sccStep sccViz params flaggedGraph
   attemptToCreateGif "resultFolder/gifResults/0004.gif"
