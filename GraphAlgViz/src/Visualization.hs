@@ -35,8 +35,14 @@ visualize (Viz alg) graph = do
 --same as run, but prints the graph to the terminal at every step
 runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
 runAndViz algStep algViz params graph = case step algStep params graph of
-                                        Left r -> print "Final graph" >> visualize algViz graph >> (print ("Result is: " ++ show r))
-                                        Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
+                                        Left r -> print "Final graph" >>  print graph >> (print ("Result is: " ++ show r))
+                                        Right (newGraph, newParams) -> print graph >> runAndViz algStep algViz newParams newGraph
+
+-- step
+-- runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
+-- runAndViz algStep algViz params graph = case step algStep params graph of
+--                                         Left r -> print "Final graph" >>  visualize algViz graph >> (print ("Result is: " ++ show r))
+--                                         Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
 
 runAndPrettyPrint :: (Show r, Show a, Show b, Show p) => AlgStep a b p r -> p -> Gr a b -> IO ()
 runAndPrettyPrint algStep params graph = case step algStep params graph of

@@ -1,4 +1,7 @@
 module Algorithms where
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances  #-}
+
 
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
@@ -10,6 +13,7 @@ import qualified Data.Map as M
 import Graph
 import Helper
 import GHC.Base (undefined)
+import Debug.Trace (trace)
 
 newtype AlgStep a b p r = Step {step :: p -> Gr a b -> Either r (Gr a b, p)}
 {- Parameterized by
@@ -51,6 +55,11 @@ Psuedocode for the implementation of breadth first search
 -}
 
 type BFSParams a = ((LNode a -> Bool), [LNode (a,Flag)])
+
+instance (Eq a) => Eq ((LNode a -> Bool)) where
+        a == b = True
+instance (Show a) => Show ((LNode a -> Bool)) where
+        show a = "f"
 
 bfsStep :: Eq a => AlgStep (a, Flag) b (BFSParams a) (Maybe (LNode a))
 -- bfs has params
@@ -105,6 +114,13 @@ bfsRun p graph = run bfsStep params flaggedGraph
         firstNode = head . labNodes $ graph
 
 
+bfsStart :: Eq a => Gr a b -> (BFSParams a, Gr (a, Flag) b)
+bfsStart graph = (params, flaggedGraph)
+  where
+    firstNode = head . labNodes $ graph
+    flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
+    p n@(i,l) = False
+    params = (p, [addFlag (const Queued) firstNode])
 
 
 ---------------------DFS-------------------------------------------------------
@@ -143,6 +159,8 @@ dfsRun p graph = run dfsStep params flaggedGraph
         flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued) else (x,Unexplored)) graph
         firstNode = head . labNodes $ graph
 
+dfsStart :: Eq a => Gr a b -> (DFSParams a, Gr (a, Flag) b)
+dfsStart = bfsStart
 
 
 
@@ -242,8 +260,6 @@ data SCCParams a =
         STwo (S (SCCFlagNode a)) |
         SThree Int (S (SCCFlagNode a)) (S (SCCFlagNode a))
 
-
-
 type S a = [LNode a]
 type SCCFlagNode a = (a, Flag, Int)
 
@@ -336,3 +352,10 @@ labelEdge graph (from, to, label) = case lab graph from of
                 Nothing -> error "no label found"
         Nothing -> error "no label found"
         
+
+sccStart :: Eq a => Gr a b -> (SCCParams a, Gr (a, Flag, Int) b)
+sccStart graph = (params, flaggedGraph)
+  where
+    firstNode = head . labNodes $ graph
+    flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued,-1) else (x,Unexplored,-1)) graph
+    params = SOne 0 [] [addFlagSCC (const Queued) firstNode] (addFlagSCC (const Queued) firstNode)

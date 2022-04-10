@@ -22,76 +22,11 @@ main = do
   putStrLn  "Give the graph size (Only used in SCC) (default: '(250,400)')"
   size <- getSize
   putStrLn  "Give the algorithm you want to visualize (default: 'BFS')"
-  (algorithm, visualizer) <- getAlgorithm size
-  let firstNode = head . labNodes $ graph
-  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-  let p n@(i,l) = l == "7"
-  let params = (p, [addFlag (const Queued) firstNode])
-  runAndViz algorithm visualizer params flaggedGraph
+  line <- getLine
+  case line of 
+    "" -> uncurry (runAndViz bfsStep bfsViz) (bfsStart graph)
+    "BFS" -> uncurry (runAndViz bfsStep bfsViz) (bfsStart graph)
+    "DFS" -> uncurry (runAndViz dfsStep dfsViz) (bfsStart graph)
+    "SCC" -> uncurry (runAndViz sccStep (sccViz size)) (sccStart graph)
   attemptToCreateGif gifPath
 
--- Is not in helper.hs to avoid circular imports
-getAlgorithm :: (Double, Double) -> IO
-                        (AlgStep
-                           ([Char], Flag) b (BFSParams [Char]) (Maybe (LNode [Char])),
-                         AlgorithmViz ([Char], Flag) String)
-getAlgorithm size = do
-    line <- getLine
-    return (returnAlg line size)
-    -- returnAlg size <$> getLine
-
-returnAlg :: (Show a1, Ord b1, Ord a2, Eq a1) =>
-                   [Char]
-                   -> (Double, Double) -> (AlgStep (a2, Flag) b2 (BFSParams a2) (Maybe (LNode a2)),
-                       AlgorithmViz (a1, Flag) b1)
-returnAlg "" _ = (bfsStep, bfsViz)
-returnAlg "BFS" _ = (bfsStep, bfsViz)
-returnAlg "DFS" _ = (dfsStep, bfsViz)
--- TODO abstract paramaters
--- returnAlg "SCC" size = (sccStep, sccViz size)
-returnAlg _ _ = error "Algorithm not found"
-
--- mainGif :: IO ()
--- mainGif = do
---   let firstNode = head . labNodes $ graph
---   let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
---   let p n@(i,l) = l == 7
---   let params = (p, [addFlag (const Queued) firstNode])
---   createFolderStructure
---   runAndViz bfsStep bfsViz params flaggedGraph
---   gifPath <- getGifPath
---   attemptToCreateGif gifPath
-
--- graph = fromEdgeList [(1, 2, "A"),
---   (2, 1, "B"),
---   (2, 3, "C"),
---   (4, 3, "D"),
---   (1, 4, "E"),
---   (4, 5, "F"),
---   (5, 6, "G"),
---   (6, 3, "H"),
---   (6, 7, "I"),
---   (7, 8, "J"),
---   (3, 9, "J1"),
---   (4, 9, "J2"),
---   (10, 11, "J3"),
---   (11, 12, "J4"),
---   (11, 13, "J5"),
---   (1, 13, "J6"),
---   (3, 13, "J7")]
-graph :: Gr Integer [Char]
-graph = fromEdgeList [(0,2,""),
-                      (0,3,""),
-                      (2,1,""),
-                      (1,0,""),
-                      (3,4,"")]
-
-mainConsole :: IO ()
-mainConsole= do
-  let firstNode = head . labNodes $ graph
-  let flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued,-1) else (x,Unexplored,-1)) graph
-  let params = SOne 0 [] [addFlagSCC (const Queued) firstNode] (addFlagSCC (const Queued) firstNode)
-  putStrLn  "Give the graph size (Only used in SCC) (default: '(250,400)')"
-  size <- getSize
-  runAndViz sccStep (sccViz size) params flaggedGraph
-  attemptToCreateGif "resultFolder/gifResults/0004.gif"

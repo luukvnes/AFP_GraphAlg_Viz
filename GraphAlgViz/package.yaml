@@ -28,10 +28,14 @@ dependencies:
 - JuicyPixels
 - split
 - text
+- HUnit
+
 
 library:
   source-dirs: src
 
+default-extensions:
+- FlexibleInstances
 
 executables:
   GraphAlgViz-exe:
@@ -41,6 +45,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+
     dependencies:
     - GraphAlgViz
 
@@ -54,3 +59,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - GraphAlgViz
+    - HUnit

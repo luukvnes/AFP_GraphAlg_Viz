@@ -34,8 +34,11 @@ library
       Paths_GraphAlgViz
   hs-source-dirs:
       src
+  default-extensions:
+      FlexibleInstances
   build-depends:
-      JuicyPixels
+      HUnit
+    , JuicyPixels
     , base >=4.7 && <5
     , containers
     , directory
@@ -51,9 +54,12 @@ executable GraphAlgViz-exe
       Paths_GraphAlgViz
   hs-source-dirs:
       app, src
+  default-extensions:
+      FlexibleInstances
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GraphAlgViz
+    , HUnit
     , JuicyPixels
     , base >=4.7 && <5
     , containers
@@ -68,13 +74,15 @@ test-suite GraphAlgViz-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      MyLibTest
       Paths_GraphAlgViz
   hs-source-dirs:
       test
+  default-extensions:
+      FlexibleInstances
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GraphAlgViz
+    , HUnit
     , JuicyPixels
     , base >=4.7 && <5
     , containers
