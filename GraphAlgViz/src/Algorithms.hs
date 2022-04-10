@@ -247,16 +247,16 @@ data SCCParams a =
 type S a = [LNode a]
 type SCCFlagNode a = (a, Flag, Int)
 
-sccStep :: Eq a =>  Ord a => AlgStep (SCCFlagNode a) b (SCCParams a) (Int)
+sccStep ::  (Eq a, Ord a, Show a) => AlgStep (SCCFlagNode a) b (SCCParams a) (Int)
 sccStep = Step sccStep'
 
-sccStep' :: Eq a => Ord a => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep' ::  (Eq a, Ord a, Show a) => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep' (SOne sccID a b c) graph = Right ( sccStep1' (sccID,a, b, c) graph)
 sccStep' (STwo stack) graph = Right (sccStep2' stack graph)
 sccStep' (SThree sccID a b) graph = sccStep3' (sccID,a, b) graph
 sccStep' _ _ = error "Wrong step number supplied"
 
-sccStep1' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep1' :: (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep1' (sccID, ss, oldPath@(p1:p2:ps), (n,l')) graph = (newGraph, newParams)
     where
         newGraph = nmap f graph
@@ -280,7 +280,7 @@ sccStep1' (sccID, ss, [p1], (n,l')) graph = (newGraph, newParams)
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 sccStep1' _ _ = error "this should not happen"
 
-sccStep2' :: Eq a => Ord a => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep2' ::  (Eq a, Ord a, Show a) => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
     where
         newGraph = fromEdgeList newEdgeList
@@ -290,7 +290,7 @@ sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
 sccStep2' _ _ = error "empty graph"
 
 
-sccStep3' :: Eq a => Ord a => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep3' ::  (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep3' (sccID, ss, (n,l'):qs) graph = Right (newGraph, newParams)
     where
         newGraph = nmap f graph
@@ -301,7 +301,7 @@ sccStep3' (sccID, ss, (n,l'):qs) graph = Right (newGraph, newParams)
         newParams = SThree sccID (removeFromStack ss) (unexploredNodes ++ qs)
         removeFromStack [] = []
         removeFromStack (x@(n',_):stack)
-                | n' == n = ss
+                | n' == n = stack
                 | otherwise = x : removeFromStack stack
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 

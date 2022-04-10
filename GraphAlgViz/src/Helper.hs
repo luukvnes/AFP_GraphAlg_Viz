@@ -95,3 +95,8 @@ getGraph = do
     handle <- openFile location ReadMode
     contents <- hGetContents handle
     return $ parseGraph contents
+
+getSize :: IO (Double, Double)
+getSize = do
+    line <- getLine
+    if line == "" then return (250 :: Double,400 :: Double) else return (read line)

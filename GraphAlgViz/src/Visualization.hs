@@ -69,13 +69,13 @@ bfsViz' graph = setDirectedness graphToDot params graph
 dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 dfsViz = bfsViz
 
-sccViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag, Int) b
-sccViz = Viz sccViz'
+sccViz :: (Eq a, Show a, Ord b) => (Double, Double) -> AlgorithmViz (a, Flag, Int) b
+sccViz size = Viz (sccViz' size)
 
-sccViz' :: (Show a, Ord b) => Gr (a, Flag, Int) b -> DotGraph Node
-sccViz' graph = setDirectedness graphToDot params graph
+sccViz' :: (Show a, Ord b) => (Double, Double) -> Gr (a, Flag, Int) b -> DotGraph Node
+sccViz' (width, height) graph = setDirectedness graphToDot params graph
   where
-    params = blankParams { globalAttributes = []
+    params = blankParams { globalAttributes = [GraphAttrs [ViewPort (VP width height 1 Nothing)]]
                          , clusterBy        = clustBy
                          , clusterID        = Num . Int
                          , isDotCluster     = const True
