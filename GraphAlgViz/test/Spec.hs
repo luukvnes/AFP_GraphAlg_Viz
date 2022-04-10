@@ -64,4 +64,26 @@ testsDFS = TestList [
     TestLabel "testbfsFinishedWithoutFind" testDFSFinishedWithoutFind
     ]
 
-tests = TestList [testsBFS, testsDFS]
+
+testStep1ExtendPath =
+    let
+        graphBefore = mkGraph [(1,("1",Queued,-1)),(2,("2",Queued,-1)),(3,("3",Unexplored,-1)),(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
+        graphAfter = mkGraph [(1,("1",Queued,-1)),(2,("2",Queued,-1)),(3,("3",Queued,-1)),(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
+        paramsBefore = SOne 0 [] [(2,("2",Unexplored,-1)),(1,("1",Queued,-1))]
+        paramsAfter = SOne 0 [] [(3,("3",Unexplored,-1)),(2,("2",Unexplored,-1)),(1,("1",Queued,-1))] in
+    TestCase (assertEqual "Extending Path by going 1 node deeper in dfs," (sccStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
+
+testStep1ExploreNode =
+    let
+        graphBefore = mkGraph [(1,("1",Queued,-1)),(2,("2",Queued,-1)),(3,("3",Explored,0)),(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
+        graphAfter = mkGraph [(1,("1",Queued,-1)),(2,("2",Explored,1)),(3,("3",Explored,0)),(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
+        paramsBefore = SOne 1 [(3,("3",Unexplored,-1))] [(2,("2",Unexplored,-1)),(1,("1",Queued,-1))]
+        paramsAfter = SOne 2 [(2,("2",Unexplored,-1)),(3,("3",Unexplored,-1))] [(1,("1",Queued,-1))] in
+    TestCase (assertEqual "fully exploring a node," (sccStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
+
+testsSCC = TestList [
+    TestLabel "testStep1ExtendPath" testStep1ExtendPath,
+    TestLabel "testStep1ExploreNode" testStep1ExploreNode
+    -- TestLabel "testStep1toStep2" testStep1toStep2
+    ]
+tests = TestList [testsBFS, testsDFS,testsSCC]

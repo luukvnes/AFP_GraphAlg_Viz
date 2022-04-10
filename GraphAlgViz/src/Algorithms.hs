@@ -256,9 +256,10 @@ dijkRun (i,l) graph = run dijkStep params flaggedGraph
 -- Step, stack, next node
 -- type SCCParams a = (StepNumber, )
 data SCCParams a =
-        SOne Int (S (SCCFlagNode a)) (S (SCCFlagNode a)) (LNode (SCCFlagNode a)) |
+        SOne Int (S (SCCFlagNode a)) (S (SCCFlagNode a)) |
         STwo (S (SCCFlagNode a)) |
         SThree Int (S (SCCFlagNode a)) (S (SCCFlagNode a))
+        deriving (Eq, Show)
 
 type S a = [LNode a]
 type SCCFlagNode a = (a, Flag, Int)
@@ -267,34 +268,35 @@ sccStep ::  (Eq a, Ord a, Show a) => AlgStep (SCCFlagNode a) b (SCCParams a) (In
 sccStep = Step sccStep'
 
 sccStep' ::  (Eq a, Ord a, Show a) => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep' (SOne sccID a b c) graph = Right ( sccStep1' (sccID,a, b, c) graph)
+sccStep' (SOne sccID a b) graph = trace ("st" ++ show a ++ "\npa" ++ show b) (Right (sccStep1' (sccID,a, b) graph))
 sccStep' (STwo stack) graph = Right (sccStep2' stack graph)
 sccStep' (SThree sccID a b) graph = sccStep3' (sccID,a, b) graph
-sccStep' _ _ = error "Wrong step number supplied"
 
-sccStep1' :: (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a), LNode (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep1' (sccID, ss, oldPath@(p1:p2:ps), (n,l')) graph = (newGraph, newParams)
+sccStep1' :: (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
+sccStep1' (sccID, ss, oldPath@(p1@(n,(label', _, _)):p2:ps)) graph = (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued, _)     = if l == l' && null unexploredNodes then l else (label, Explored, sccID)
-        f l@(label, Unexplored, _) = if l == l' then (label, Queued, -1) else l
+        f l@(label, Queued, _)     = if label == label' && null unexploredNodes then (label, Explored, sccID) else l
+        f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
         f l = l
-        newParams = if null unexploredNodes
-            then SOne (sccID +1) (p1:ss) (p2:ps) p2
-            else SOne sccID ss (head unexploredNodes:oldPath) (head unexploredNodes)
+        
+        newParams = if trace ("UE" ++ show unexploredNodes) (null unexploredNodes)
+            then SOne (sccID +1) (p1:ss) (p2:ps)
+            else SOne sccID ss (head unexploredNodes:oldPath)
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 -- if path is empty try to find new starting node, if not found go to step 2
-sccStep1' (sccID, ss, [p1], (n,l')) graph = (newGraph, newParams)
+sccStep1' (sccID, ss, [p1@(n,(label', _, _))]) graph = (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued, _)     = if l == l' && null unexploredNodes then l else (label, Explored, sccID)
-        f l@(label, Unexplored, _) = if l == l' then (label, Queued, -1) else l
+        f l@(label, Queued, _)     = if label == label' && null unexploredNodes then (label, Explored, sccID) else l
+        f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
         f l = l
-        newParams = if null unexploredNodes
+        newParams = if trace ("UE" ++ show unexploredNodes) (null unexploredNodes)
             then STwo (p1:ss) -- third and fourth params dont matter in this case
-            else SOne sccID ss (head unexploredNodes:[p1]) (head unexploredNodes)
+            else SOne sccID ss (head unexploredNodes:[p1])
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 sccStep1' _ _ = error "this should not happen"
+--TODO: LOOK FOR NEW STARTING NDOE
 
 sccStep2' ::  (Eq a, Ord a, Show a) => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
@@ -358,4 +360,4 @@ sccStart graph = (params, flaggedGraph)
   where
     firstNode = head . labNodes $ graph
     flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued,-1) else (x,Unexplored,-1)) graph
-    params = SOne 0 [] [addFlagSCC (const Queued) firstNode] (addFlagSCC (const Queued) firstNode)
+    params = SOne 0 [] [addFlagSCC (const Queued) firstNode]
