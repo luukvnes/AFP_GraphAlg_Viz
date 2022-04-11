@@ -13,7 +13,6 @@ import qualified Data.Map as M
 import Graph
 import Helper
 import GHC.Base (undefined)
-import Debug.Trace (trace)
 
 newtype AlgStep a b p r = Step {step :: p -> Gr a b -> Either r (Gr a b, p)}
 {- Parameterized by
@@ -268,7 +267,7 @@ sccStep ::  (Eq a, Ord a, Show a) => AlgStep (SCCFlagNode a) b (SCCParams a) (In
 sccStep = Step sccStep'
 
 sccStep' ::  (Eq a, Ord a, Show a) => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep' (SOne sccID a b) graph = trace ("st" ++ show a ++ "\npa" ++ show b) (Right (sccStep1' (sccID,a, b) graph))
+sccStep' (SOne sccID a b) graph = Right (sccStep1' (sccID,a, b) graph)
 sccStep' (STwo stack) graph = Right (sccStep2' stack graph)
 sccStep' (SThree sccID a b) graph = sccStep3' (sccID,a, b) graph
 
@@ -280,7 +279,7 @@ sccStep1' (sccID, ss, oldPath@(p1@(n,(label', _, _)):p2:ps)) graph = (newGraph, 
         f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
         f l = l
         
-        newParams = if trace ("UE" ++ show unexploredNodes) (null unexploredNodes)
+        newParams = if null unexploredNodes
             then SOne (sccID +1) (p1:ss) (p2:ps)
             else SOne sccID ss (head unexploredNodes:oldPath)
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
@@ -291,7 +290,7 @@ sccStep1' (sccID, ss, [p1@(n,(label', _, _))]) graph = (newGraph, newParams)
         f l@(label, Queued, _)     = if label == label' && null unexploredNodes then (label, Explored, sccID) else l
         f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
         f l = l
-        newParams = if trace ("UE" ++ show unexploredNodes) (null unexploredNodes)
+        newParams = if null unexploredNodes
             then STwo (p1:ss) -- third and fourth params dont matter in this case
             else SOne sccID ss (head unexploredNodes:[p1])
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
@@ -309,11 +308,11 @@ sccStep2' _ _ = error "empty graph"
 
 
 sccStep3' ::  (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep3' (sccID, ss, (n,l'):qs) graph = Right (newGraph, newParams)
+sccStep3' (sccID, ss, (n,(label',_,_)):qs) graph = Right (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued, _)     = if l == l' then l else (label, Explored,sccID)
-        f l@(label, Unexplored, _) = if l == l' then (label, Queued,-1) else l
+        f l@(label, Queued,_)     = if label == label' then (label, Explored, sccID) else l
+        f l@(label, Unexplored,_) = if label `elem` map (fstT.snd) unexploredNodes then (label, Queued,-1) else l
         f l = l
         -- TODO remove l' from stack
         newParams = SThree sccID (removeFromStack ss) (unexploredNodes ++ qs)
@@ -324,23 +323,16 @@ sccStep3' (sccID, ss, (n,l'):qs) graph = Right (newGraph, newParams)
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 
 
-
-sccStep3' (sccID, (n,l'@(label, _,_)):ss, []) graph = Right (newGraph, newParams)
+-- Find new starting location
+sccStep3' (sccID, (n,(label', _,_)):ss, []) graph = Right (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued,_)     = if l == l' then l else (label, Explored,sccID)
-        f l@(label, Unexplored,_) = if l == l' then (label, Queued,sccID+1) else l
+        f l@(label, Queued,_)     = if label == label' then l else (label, Explored,sccID)
+        f l@(label, Unexplored,_) = if label == label' then (label, Queued,sccID+1) else l
         f l = l
         -- newParams :: SCCParams a
-        newParams = SThree (sccID+1) ss [(n,(label, Queued, sccID+1))]
-sccStep3' (-2, [], []) _ = Left 1
-sccStep3' (_, [], []) graph = Right (newGraph, newParams)
-    where
-        newGraph = nmap f graph
-        f (label, Queued,sccID)     =(label, Explored,sccID+1)
-        f l = l
-        -- newParams :: SCCParams a
-        newParams = SThree (-2) [] []
+        newParams = SThree (sccID+1) ss [(n,(label', Queued, sccID+1))]
+sccStep3' (_, [], []) _ = Left 1
 
 -- for some reason putting this in the where clause does not work
 createFlaggedGraph :: Eq a => Gr a b -> (Node, a) -> Gr (SCCFlagNode a) b
