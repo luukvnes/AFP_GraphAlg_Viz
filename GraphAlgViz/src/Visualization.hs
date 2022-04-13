@@ -74,6 +74,9 @@ bfsViz' graph = setDirectedness graphToDot params graph
 dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 dfsViz = bfsViz
 
+dijkViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
+dijkViz = bfsViz
+
 sccViz :: (Eq a, Show a, Ord b) => (Double, Double) -> AlgorithmViz (a, Flag, Int) b
 sccViz size = Viz (sccViz' size)
 
@@ -93,7 +96,7 @@ sccViz' (width, height) graph = setDirectedness graphToDot params graph
     fmtNode (_, (l, Queued, _)) = [Color [WC (X11Color Red) Nothing], label l ]
     -- if in step 1
     --    then we give it a green colour depending on when it was added to the stack
-    -- in step 3, 
+    -- in step 3,
     --    then we give it a random colour from a list of fairly random colours.
     fmtNode (_, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
                                   | otherwise = [Color [WC (rgbFromStackID s) Nothing], label l ]

@@ -118,7 +118,7 @@ bfsStart target graph = (params, flaggedGraph)
   where
     firstNode = head . labNodes $ graph
     flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-    p (i,l) = l == target
+    p (_,l) = l == target
     params = (p, [addFlag (const Queued) firstNode])
 
 
@@ -236,6 +236,20 @@ dijkRun (i,l) graph = run dijkStep params flaggedGraph
         f (i',(l',Queued)) _ = (0, (i',(l',Unexplored)))
         f _              v = v
         flaggedGraph       = nmap (\x -> if x == l then (x,Queued) else (x,Unexplored)) graph
+
+dijkStart :: (Eq a, Ord a) => a -> Gr a b -> (DijkParams a, Gr (a, Flag) b)
+dijkStart label graph = (params, flaggedGraph)
+  where params             = (q, dists)
+        -- initial queue consists of all nodes
+        q                  = listNodes flaggedGraph
+        -- distances are unexplored, except for the source node.
+        dists              = M.mapWithKey f $ M.fromList $ zip q (repeat (maxBound, (i,(l,Unexplored))))
+        f (i',(l',Queued)) _ = (0, (i',(l',Unexplored)))
+        f _              v = v
+        flaggedGraph       = nmap (\x -> if x == label then (x,Queued) else (x,Unexplored)) graph
+        source@(i,l) = case (filter (\x -> label == snd x) $ listNodes graph) of
+                        [] -> error "Could not find source node when initializing Dijkstra's algorithm"
+                        (x:_) -> x
 
 
 ------------------SCC--------------------------------------------
