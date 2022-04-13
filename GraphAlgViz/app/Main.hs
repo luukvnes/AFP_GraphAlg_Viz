@@ -23,10 +23,26 @@ main = do
   size <- getSize
   putStrLn  "Give the algorithm you want to visualize (default: 'BFS')"
   line <- getLine
-  case line of 
-    "" -> uncurry (runAndViz bfsStep bfsViz) (bfsStart graph)
-    "BFS" -> uncurry (runAndViz bfsStep bfsViz) (bfsStart graph)
-    "DFS" -> uncurry (runAndViz dfsStep dfsViz) (bfsStart graph)
-    "SCC" -> uncurry (runAndViz sccStep (sccViz size)) (sccStart graph)
+  case (line `elem` ["", "BFS", "DFS"]) of
+    True -> algWithTarget gifPath graph size line
+    False -> algWithoutTarget gifPath graph size line
+
+algWithTarget :: String -> Gr String String -> (Double, Double) -> String -> IO ()
+algWithTarget gifPath graph _ line = do
+  putStrLn "Give the target node? Please supply a label from the following lists:"
+  let nodeLabels = show . map snd . listNodes $ graph
+  putStrLn nodeLabels
+  label <- getLine
+  case line of
+    ""    -> uncurry (runAndViz bfsStep bfsViz) (bfsStart label graph)
+    "BFS" -> uncurry (runAndViz bfsStep bfsViz) (bfsStart label graph)
+    "DFS" -> uncurry (runAndViz dfsStep dfsViz) (bfsStart label graph)
+    _     -> error "Could not recognize algorithm"
   attemptToCreateGif gifPath
 
+algWithoutTarget :: String -> Gr String String -> (Double, Double) -> String -> IO ()
+algWithoutTarget gifPath graph size line = do
+  case line of
+    "SCC" -> uncurry (runAndViz sccStep (sccViz size)) (sccStart graph)
+    _     -> error "Could not recognize algorithm"
+  attemptToCreateGif gifPath

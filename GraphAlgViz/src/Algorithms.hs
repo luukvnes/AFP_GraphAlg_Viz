@@ -113,12 +113,12 @@ bfsRun p graph = run bfsStep params flaggedGraph
         firstNode = head . labNodes $ graph
 
 
-bfsStart :: Eq a => Gr a b -> (BFSParams a, Gr (a, Flag) b)
-bfsStart graph = (params, flaggedGraph)
+bfsStart :: Eq a => a -> Gr a b -> (BFSParams a, Gr (a, Flag) b)
+bfsStart target graph = (params, flaggedGraph)
   where
     firstNode = head . labNodes $ graph
     flaggedGraph = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued) else (x,Unexplored)) graph
-    p n@(i,l) = False
+    p (i,l) = l == target
     params = (p, [addFlag (const Queued) firstNode])
 
 
@@ -158,7 +158,7 @@ dfsRun p graph = run dfsStep params flaggedGraph
         flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued) else (x,Unexplored)) graph
         firstNode = head . labNodes $ graph
 
-dfsStart :: Eq a => Gr a b -> (DFSParams a, Gr (a, Flag) b)
+dfsStart :: Eq a => a -> Gr a b -> (DFSParams a, Gr (a, Flag) b)
 dfsStart = bfsStart
 
 
@@ -245,7 +245,7 @@ dijkRun (i,l) graph = run dijkStep params flaggedGraph
 2
 3      DFS (restarting at unexplored vertices) adding vertices to a stack whenever they have no unexplored vertices
 4      reverse all edge directions
-5      DFS restarting at unexplored vertex top of the stack, every vertex you discover from a single starting vertex belongs to scc 
+5      DFS restarting at unexplored vertex top of the stack, every vertex you discover from a single starting vertex belongs to scc
 -}
 
 
@@ -278,7 +278,7 @@ sccStep1' (sccID, ss, oldPath@(p1@(n,(label', _, _)):p2:ps)) graph = (newGraph, 
         f l@(label, Queued, _)     = if label == label' && null unexploredNodes then (label, Explored, sccID) else l
         f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
         f l = l
-        
+
         newParams = if null unexploredNodes
             then SOne (sccID +1) (p1:ss) (p2:ps)
             else SOne sccID ss (head unexploredNodes:oldPath)
@@ -345,7 +345,7 @@ labelEdge graph (from, to, label) = case lab graph from of
                 Just y -> (fstT y, fstT x, label)
                 Nothing -> error "no label found"
         Nothing -> error "no label found"
-        
+
 
 sccStart :: Eq a => Gr a b -> (SCCParams a, Gr (a, Flag, Int) b)
 sccStart graph = (params, flaggedGraph)
