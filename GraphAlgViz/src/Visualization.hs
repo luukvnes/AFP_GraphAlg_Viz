@@ -67,6 +67,7 @@ bfsViz' graph = setDirectedness graphToDot params graph
     fmtNode (_, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
     fmtNode (_, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
     fmtNode (_, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
+    fmtNode (_, (l, Goal)) = [Color [WC (X11Color Yellow) Nothing], label l ]
 
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
