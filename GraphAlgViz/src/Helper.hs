@@ -8,9 +8,13 @@ import System.Directory
 import System.IO
 import Control.Monad
 import Graph
+
+
+
 data Flag = Unexplored
           | Explored
           | Queued
+          | Goal
           deriving (Show, Eq, Ord)
 
 --Helper functions for manipulating flags in node labels

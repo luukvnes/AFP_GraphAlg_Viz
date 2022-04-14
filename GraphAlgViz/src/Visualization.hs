@@ -68,6 +68,7 @@ bfsViz' graph = setDirectedness graphToDot params graph
     fmtNode (_, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
     fmtNode (_, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
     fmtNode (_, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
+    fmtNode (_, (l, Goal)) = [Color [WC (X11Color Yellow) Nothing], label l ]
 
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
@@ -75,6 +76,9 @@ bfsViz' graph = setDirectedness graphToDot params graph
 -- |'dfsViz' uses the same visualization as 'bfsViz'
 dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 dfsViz = bfsViz
+
+dijkViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
+dijkViz = bfsViz
 
 -- |'sccViz' takes a pair of doubles denoting the size of the image used, returns the visualization function used in scc.
 sccViz :: (Eq a, Show a, Ord b) => (Double, Double) -> AlgorithmViz (a, Flag, Int) b
@@ -97,7 +101,7 @@ sccViz' (width, height) graph = setDirectedness graphToDot params graph
     fmtNode (_, (l, Queued, _)) = [Color [WC (X11Color Red) Nothing], label l ]
     -- if in step 1
     --    then we give it a green colour depending on when it was added to the stack
-    -- in step 3, 
+    -- in step 3,
     --    then we give it a random colour from a list of fairly random colours.
     fmtNode (_, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
                                   | otherwise = [Color [WC (rgbFromStackID s) Nothing], label l ]
