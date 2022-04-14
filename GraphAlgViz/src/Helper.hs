@@ -29,21 +29,24 @@ getFlag (_,(_,f)) = f
 removeFlag :: LNode (a,Flag) -> LNode a
 removeFlag (n,(l,_)) = (n,l)
 
---Helper functions for manipulating flags in node labels for SCC
---add a boolean flag to the label type using a tuple and a function from nodes to booleans
+-- |'addFlagSCC' takes a 'LNode' and a function that can produce a 'Flag' given that 'LNode'. It then adds that 'Flag' to the 'LNode' and a dummy int representing its component\stack location
 addFlagSCC :: (LNode a -> Flag) -> LNode a -> LNode (a,Flag, Int)
 addFlagSCC p n@(node,label) = (node, (label,p n,-1))
---extract a boolean flag from a node
+
+-- |'addFlagSCC' takes a 'LNode' and a extracts its 'Flag'
 getFlagSCC :: LNode (a,Flag, Int) -> Flag
 getFlagSCC (_,(_,f,_)) = f
 
---remove a flag from a node.
+-- |'removeFlagSCC' takes a 'LNode' returns the node without its 'Flag' and component/stack id
 removeFlagSCC :: LNode (a,Flag, Int) -> LNode a
 removeFlagSCC (n,(l,_,_)) = (n,l)
 
+
+-- |'fstT' takes a triplet and returns its first value
 fstT :: (a, b, c) -> a
 fstT (a, _, _) = a
 
+-- |'incrementFileName' takes a string in the shape of NNNN.ext (0063.bmp) a file extension and returns the incremented file name (0064.bmp)
 incrementFileName :: String -> String -> String
 incrementFileName str extension = zeros ++ resNString ++ extension
     where
@@ -52,11 +55,13 @@ incrementFileName str extension = zeros ++ resNString ++ extension
         zeros :: String
         zeros = replicate (4 - length resNString) '0'
 
+-- |'incrementFileName' takes a file name and drops its extension
 dropExtension :: String -> String
 dropExtension [] = []
 dropExtension ('.':_) = []
 dropExtension (x:xs) = x : dropExtension xs
 
+-- |'incrementFolderName' takes a string in the shape of NNNN (0063) and returns the incremented folder name (0064)
 incrementFolderName :: String -> String
 incrementFolderName str = zeros ++ resNString
     where
@@ -65,6 +70,7 @@ incrementFolderName str = zeros ++ resNString
         zeros :: String
         zeros = replicate (4 - length resNString) '0'
 
+-- |'createFolderStructure' creates all the required folders where images and gifs are stored.
 createFolderStructure :: IO ()
 createFolderStructure = do
     exists <- doesDirectoryExist "resultFolder"
@@ -77,17 +83,21 @@ createFolderStructure = do
     let isDirEmpty =  null dirs
     if isDirEmpty then createDirectory "resultFolder/ImageFolders/0000" else createDirectory $ "resultFolder/ImageFolders/" ++ incrementFolderName (last (sort dirs))
 
+
+-- |'getGifPath' takes user input and returns the path for a gif with default 'retrieveDefaultGif' if the user enters nothing
 getGifPath :: IO String
 getGifPath = do
     line <- getLine
     if line == "" then retrieveDefaultGif else return line
 
+-- |'retrieveDefaultGif' returns the default gif path, which is the path of the latest default gif incremented by 1.
 retrieveDefaultGif :: IO [Char]
 retrieveDefaultGif = do
     gifFiles <- listDirectory "resultFolder/gifResults"
     let lastFile = if null gifFiles then "0000.gif" else last (sort gifFiles)
     return $ "resultFolder/gifResults/" ++ incrementFileName lastFile ".gif"
 
+-- |'getGraph' takes user input and returns the path for the used graph with default graphs/default.txt
 getGraph :: IO (Gr String String)
 getGraph = do
     line <- getLine
@@ -96,6 +106,7 @@ getGraph = do
     contents <- hGetContents handle
     return $ parseGraph contents
 
+-- |'getSize' takes user input and returns the size of the resulting image/gif with default (250,400)
 getSize :: IO (Double, Double)
 getSize = do
     line <- getLine

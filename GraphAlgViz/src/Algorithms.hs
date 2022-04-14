@@ -254,23 +254,36 @@ dijkRun (i,l) graph = run dijkStep params flaggedGraph
 -- step3, current component ID, scc stack, dfs stack, next node
 -- Step, stack, next node
 -- type SCCParams a = (StepNumber, )
+
+
+-- | 'SCCParams' contain the paramaters for all the SCC steps. There are three constructors, 
 data SCCParams a =
+        -- | 'SOne' takes the paramaters for the first step, an int that counts how many nodes have been added to the stack, the scc stack and the current path of the dfs as stack.
         SOne Int (S (SCCFlagNode a)) (S (SCCFlagNode a)) |
+        -- | 'STwo' takes the paramaters for the second step, it only takes the stack, which it does not use except to pass on to the third step
         STwo (S (SCCFlagNode a)) |
+        -- | 'SThree' takes the paramaters for the third step, an int that keeps track of which component is being discovered, the scc stack, and dfs stack.
         SThree Int (S (SCCFlagNode a)) (S (SCCFlagNode a))
         deriving (Eq, Show)
 
+-- | A type signature for a stack
 type S a = [LNode a]
+-- | The type of the nodes used in scc
 type SCCFlagNode a = (a, Flag, Int)
 
+-- | A step function for the strongly connected component algorithm
 sccStep ::  (Eq a, Ord a, Show a) => AlgStep (SCCFlagNode a) b (SCCParams a) (Int)
 sccStep = Step sccStep'
 
+-- | A step function for the strongly connected component algorithm
 sccStep' ::  (Eq a, Ord a, Show a) => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep' (SOne sccID a b) graph = Right (sccStep1' (sccID,a, b) graph)
 sccStep' (STwo stack) graph = Right (sccStep2' stack graph)
 sccStep' (SThree sccID a b) graph = sccStep3' (sccID,a, b) graph
 
+-- | A step function for the first step of the strongly connected component algorithm
+-- This step does DFS (restarting at unexplored vertices) adding vertices to a stack whenever they have no unexplored vertices
+-- If this step is finished it produces the paramaters for the second step, otherwise it produces another set of step 1 parameters.
 sccStep1' :: (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep1' (sccID, ss, oldPath@(p1@(n,(label', _, _)):p2:ps)) graph = (newGraph, newParams)
     where
@@ -295,8 +308,9 @@ sccStep1' (sccID, ss, [p1@(n,(label', _, _))]) graph = (newGraph, newParams)
             else SOne sccID ss (head unexploredNodes:[p1])
         unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
 sccStep1' _ _ = error "this should not happen"
---TODO: LOOK FOR NEW STARTING NDOE
 
+-- | A step function for the second step of the strongly connected component algorithm
+-- This step reverses all the edges in the graph
 sccStep2' ::  (Eq a, Ord a, Show a) => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
     where
@@ -306,7 +320,8 @@ sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
         newParams = SThree 5 (s:ss) [addFlagSCC (const Queued) firstNode]
 sccStep2' _ _ = error "empty graph"
 
-
+-- | A step function for the third step of the strongly connected component algorithm
+-- This step does DFS restarting at the front node of the stack, every node it encounters belongs to the component of the starting node
 sccStep3' ::  (Eq a, Ord a, Show a) => (Int, S (SCCFlagNode a), S (SCCFlagNode a)) -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep3' (sccID, ss, (n,(label',_,_)):qs) graph = Right (newGraph, newParams)
     where
@@ -338,7 +353,7 @@ sccStep3' (_, [], []) _ = Left 1
 createFlaggedGraph :: Eq a => Gr a b -> (Node, a) -> Gr (SCCFlagNode a) b
 createFlaggedGraph graph firstNode = nmap (\x -> if (Just x == lab graph (fst firstNode)) then (x,Queued, -1) else (x,Unexplored, -1)) graph
 
--- given a graph and an edge transform it to an edgelist value
+-- | given a graph and an edge transform it to an edgelist value
 labelEdge :: Eq a => Gr (SCCFlagNode a) b -> (Node, Node, b) -> (a, a, b)
 labelEdge graph (from, to, label) = case lab graph from of
         Just x -> case lab graph to of
@@ -346,7 +361,7 @@ labelEdge graph (from, to, label) = case lab graph from of
                 Nothing -> error "no label found"
         Nothing -> error "no label found"
         
-
+-- | Produces the starting paramaters for scc with the gives graph
 sccStart :: Eq a => Gr a b -> (SCCParams a, Gr (a, Flag, Int) b)
 sccStart graph = (params, flaggedGraph)
   where

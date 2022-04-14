@@ -6,6 +6,7 @@ import System.Directory
 import Helper
 import Data.List
 
+-- |'attemptToCreateGif' takes a path as string and attempts to use the images in the latest imagefolder to create a gif.
 attemptToCreateGif :: [Char] -> IO ()
 attemptToCreateGif gifPath = do
     imageFolderDirs <- listDirectory "resultFolder/ImageFolders"
@@ -17,18 +18,18 @@ attemptToCreateGif gifPath = do
     let gifWithError = writeGifImages gifPath LoopingNever palDelayImgs -- writes the gif to a file and returns something
     extractGif gifWithError --not sure what the IO result entails
 
--- palettize :: PaletteOptions -> Image PixelRGB8 -> (Image Pixel8, Palette)
--- convertRGB8 :: DynamicImage -> Image PixelRGB8
--- writeGifImageWithPalette :: FilePath -> Image Pixel8 -> Palette -> Either String (IO ())
--- writeGifImages :: FilePath -> GifLooping -> [(Palette, GifDelay, Image Pixel8)] -> Either String (IO ())
-
+-- |'paletteOptions' is a constant that returns the PaletteOptions we use in this project
 paletteOptions :: PaletteOptions
 paletteOptions = PaletteOptions ( MedianMeanCut {-paletteCreationMethod-}) (True {-enableImageDithering-}) ( 100 {- paletteColorCount-})
 
+
+-- |'extractImage' prints an error message if the image reading went wrong and returns a 'DynamicImage' otherwise
 extractImage :: Either String DynamicImage -> DynamicImage
 extractImage (Left str) = error (str ++ "extr")
 extractImage (Right img) = img
 
+
+-- |'extractGif' prints an error message if the gif making went wrong and returns an empty io otherwise
 extractGif :: Either String (IO ()) -> IO ()
 extractGif (Left str) = error (str ++ "notsure")
 extractGif (Right io) = io

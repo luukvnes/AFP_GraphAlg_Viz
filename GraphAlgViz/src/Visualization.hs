@@ -18,7 +18,7 @@ import GHC.Word
 
 newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 
--- current bug with creating the inner directory, for now run twice.
+-- |'visualize' takes an 'AlgorithmViz' and a 'Gr' and runs the visualization algorithm on the graph to create an image storing at the last imageFolder with an incremented name. 
 visualize :: AlgorithmViz a b -> Gr a b -> IO ()
 visualize (Viz alg) graph = do
     dirs <- listDirectory "resultFolder/ImageFolders"
@@ -48,10 +48,11 @@ runAndPrettyPrint algStep params graph = case step algStep params graph of
                                               Left r -> print "Final graph" >> prettyPrint graph >> (print ("Result is: " ++ show r))
                                               Right (newGraph, newParams) -> prettyPrint graph >> print newParams >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
 
--- bfsStep :: Eq a => AlgStep (a, Bool) b (BFSParams a) (Maybe (LNode a))
+-- |'bfsViz' returns the visualization function used in bfs.
 bfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 bfsViz = Viz bfsViz'
 
+-- |In this visualization function unexplored nodes are coloured blue, queued nodes are coloured red and explored nodes are coloured green
 bfsViz' :: (Show a, Ord b) => Gr (a, Flag) b -> DotGraph Node
 bfsViz' graph = setDirectedness graphToDot params graph
   where
@@ -71,12 +72,15 @@ bfsViz' graph = setDirectedness graphToDot params graph
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
 
+-- |'dfsViz' uses the same visualization as 'bfsViz'
 dfsViz :: (Eq a, Show a, Ord b) => AlgorithmViz (a, Flag) b
 dfsViz = bfsViz
 
+-- |'sccViz' takes a pair of doubles denoting the size of the image used, returns the visualization function used in scc.
 sccViz :: (Eq a, Show a, Ord b) => (Double, Double) -> AlgorithmViz (a, Flag, Int) b
 sccViz size = Viz (sccViz' size)
 
+-- |In the first step it colours nodes green with a brighter green if explored earlier in the step. In the third step it colours each node in a component with the same colour.
 sccViz' :: (Show a, Ord b) => (Double, Double) -> Gr (a, Flag, Int) b -> DotGraph Node
 sccViz' (width, height) graph = setDirectedness graphToDot params graph
   where
