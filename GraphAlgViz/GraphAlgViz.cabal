@@ -26,6 +26,10 @@ source-repository head
 library
   exposed-modules:
       Algorithms
+      Algorithms.BFS
+      Algorithms.DFS
+      Algorithms.Dijkstra
+      Algorithms.SCC
       Gif
       Graph
       Helper

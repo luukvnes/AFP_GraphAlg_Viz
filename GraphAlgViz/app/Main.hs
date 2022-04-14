@@ -7,6 +7,10 @@ import Data.Graph.Inductive.Tree
 import qualified Data.Map as M
 
 import Algorithms
+import Algorithms.BFS
+import Algorithms.DFS
+import Algorithms.Dijkstra
+import Algorithms.SCC
 import Visualization
 import Graph
 import Gif
