@@ -69,13 +69,17 @@ sccStep1' (sccID, ss, oldPath@(p1@(n,(label', _, _)):p2:ps)) graph = (newGraph, 
 sccStep1' (sccID, ss, [p1@(n,(label', _, _))]) graph = (newGraph, newParams)
     where
         newGraph = nmap f graph
-        f l@(label, Queued, _)     = if label == label' && null unexploredNodes then (label, Explored, sccID) else l
-        f l@(label, Unexplored, _) = if not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label then (label, Queued, -1)  else l
+        f l@(label, Queued, _)     = if label == label' && null unexploredNeighbours then (label, Explored, sccID) else l
+        f l@(label, Unexplored, _) = if (not (null unexploredNeighbours) && fstT (snd (head unexploredNeighbours)) ==  label)
+                                     || (null unexploredNeighbours && not (null unexploredNodes) && fstT (snd (head unexploredNodes)) ==  label) then (label, Queued, -1) else l
         f l = l
-        newParams = if null unexploredNodes
-            then STwo (p1:ss) -- third and fourth params dont matter in this case
-            else SOne sccID ss (head unexploredNodes:[p1])
-        unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+        newParams = if null unexploredNeighbours
+            then if null unexploredNodes
+                    then STwo (p1:ss)
+                    else SOne (sccID+1) (p1:ss) [head unexploredNodes]
+            else SOne sccID ss (head unexploredNeighbours:[p1])
+        unexploredNeighbours = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ listOutNeighbors graph n
+        unexploredNodes = sortOn fst $ filter (\x -> getFlagSCC x == Unexplored) $ labNodes graph
 sccStep1' _ _ = error "this should not happen"
 
 -- | A step function for the second step of the strongly connected component algorithm
@@ -129,7 +133,7 @@ labelEdge graph (from, to, label) = case lab graph from of
                 Just y -> (fstT y, fstT x, label)
                 Nothing -> error "no label found"
         Nothing -> error "no label found"
-        
+
 -- | Produces the starting paramaters for scc with the gives graph
 sccStart :: Eq a => Gr a b -> (SCCParams a, Gr (a, Flag, Int) b)
 sccStart graph = (params, flaggedGraph)

@@ -35,8 +35,8 @@ run algStep params graph = case step algStep params graph of
                                       Right (newGraph, newParams) -> run algStep newParams newGraph
 
 
-instance (Eq a) => Eq ((LNode a -> Bool)) where
+instance (Eq a) => Eq (a -> Bool) where
         a == b = True
-instance (Show a) => Show ((LNode a -> Bool)) where
+instance (Show a) => Show (a -> Bool) where
         show a = "f"
 

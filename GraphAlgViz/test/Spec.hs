@@ -1,5 +1,9 @@
 import Test.HUnit
 import Algorithms
+import Algorithms.DFS
+import Algorithms.BFS
+import Algorithms.SCC
+import Algorithms.Dijkstra
 import Helper
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
@@ -13,20 +17,20 @@ testbasicBFS =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Queued)),(3,("3",Unexplored)),(4,("4",Queued)),(5,("5",Unexplored)),(6,("6",Unexplored)),(7,("7",Unexplored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
         graphAfter = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Queued)),(4,("4",Queued)),(5,("5",Unexplored)),(6,("6",Unexplored)),(7,("7",Unexplored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
-        paramsBefore = (\n@(i,l) -> l == "7", [(2,("2",Queued)),(4,("4",Unexplored))])
-        paramsAfter = (\n@(i,l) -> l == "7", [(4,("4",Unexplored)),(3,("3",Unexplored))]) in
+        paramsBefore = ((== "7"), [(2,("2",Queued)),(4,("4",Unexplored))])
+        paramsAfter = ((== "7"), [(4,("4",Unexplored)),(3,("3",Unexplored))]) in
     TestCase (assertEqual "basic BFS step" (bfsStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
 
 testBFSFoundNode =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Explored)),(4,("4",Explored)),(5,("5",Explored)),(6,("6",Explored)),(7,("7",Queued))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
-        paramsBefore = (\n@(i,l) -> l == "7", [(7,("7",Queued))]) in
+        paramsBefore = ((== "7"), [(7,("7",Queued))]) in
     TestCase (assertEqual "testing if BFS works correctly when the noude is found" (bfsStep' paramsBefore graphBefore) (Left (Just (7, "7"))))
 
 testBFSFinishedWithoutFind =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Explored)),(4,("4",Explored)),(5,("5",Explored)),(6,("6",Explored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H")]
-        paramsBefore = (\n@(i,l) -> l == "7", []) in
+        paramsBefore = ((== "7"), []) in
     TestCase (assertEqual "testing if BFS works correctly when the noude is not found" (bfsStep' paramsBefore graphBefore) (Left Nothing))
 
 
@@ -41,20 +45,20 @@ testbasicDFS =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Queued)),(3,("3",Unexplored)),(4,("4",Queued)),(5,("5",Unexplored)),(6,("6",Unexplored)),(7,("7",Unexplored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
         graphAfter = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Queued)),(4,("4",Queued)),(5,("5",Unexplored)),(6,("6",Unexplored)),(7,("7",Unexplored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
-        paramsBefore = (\n@(i,l) -> l == "7", [(2,("2",Queued)), (4,("4",Unexplored))])
-        paramsAfter = (\n@(i,l) -> l == "7", [(3,("3",Unexplored)),(4,("4",Unexplored))]) in
+        paramsBefore = ((== "7"), [(2,("2",Queued)), (4,("4",Unexplored))])
+        paramsAfter = ((== "7"), [(3,("3",Unexplored)),(4,("4",Unexplored))]) in
     TestCase (assertEqual "basic DFS step," (dfsStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
 
 testDFSFoundNode =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Explored)),(4,("4",Explored)),(5,("5",Explored)),(6,("6",Explored)),(7,("7",Queued))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H"),(6,7,"I"),(7,1,"J")]
-        paramsBefore = (\n@(i,l) -> l == "7", [(7,("7",Queued))]) in
+        paramsBefore = ((== "7"), [(7,("7",Queued))]) in
     TestCase (assertEqual "testing if DFS works correctly when the noude is found" (dfsStep' paramsBefore graphBefore) (Left (Just (7, "7"))))
 
 testDFSFinishedWithoutFind =
     let
         graphBefore = mkGraph [(1,("1",Explored)),(2,("2",Explored)),(3,("3",Explored)),(4,("4",Explored)),(5,("5",Explored)),(6,("6",Explored))] [(1,4,"E"),(1,2,"A"),(2,1,"B"),(2,3,"C"),(4,3,"D"),(4,5,"F"),(5,6,"G"),(6,3,"H")]
-        paramsBefore = (\n@(i,l) -> l == "7", []) in
+        paramsBefore = ((== "7"), []) in
     TestCase (assertEqual "testing if DFS works correctly when the noude is not found" (dfsStep' paramsBefore graphBefore) (Left Nothing))
 
 
@@ -80,6 +84,16 @@ testStep1ExploreNode =
         paramsBefore = SOne 1 [(3,("3",Unexplored,-1))] [(2,("2",Unexplored,-1)),(1,("1",Queued,-1))]
         paramsAfter = SOne 2 [(2,("2",Unexplored,-1)),(3,("3",Unexplored,-1))] [(1,("1",Queued,-1))] in
     TestCase (assertEqual "fully exploring a node," (sccStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
+
+testStep1Restarting =
+    let
+        graphBefore = mkGraph [(1,("1",Queued,-1)),(2,("10",Unexplored,-1)),(3,("2",Explored,1)),(4,("3",Explored,0)),(5,("4",Explored,5)),(6,("5",Explored,4)),(7,("6",Explored,3)),(8,("7",Explored,2)),(9,("8",Unexplored,-1)),(10,("9",Unexplored,-1))] [(1,5,"E"),(1,3,"A"),(3,1,"B"),(3,4,"C"),(5,4,"D"),(5,6,"F"),(6,7,"G"),(7,4,"H"),(7,8,"I"),(8,1,"J"),(9,2,"M"),(9,10,"K"),(10,2,"L")]
+        graphAfter = mkGraph [(1,("1",Explored,6)),(2,("10",Queued,-1)),(3,("2",Explored,1)),(4,("3",Explored,0)),(5,("4",Explored,5)),(6,("5",Explored,4)),(7,("6",Explored,3)),(8,("7",Explored,2)),(9,("8",Unexplored,-1)),(10,("9",Unexplored,-1))] [(1,5,"E"),(1,3,"A"),(3,1,"B"),(3,4,"C"),(5,4,"D"),(5,6,"F"),(6,7,"G"),(7,4,"H"),(7,8,"I"),(8,1,"J"),(9,2,"M"),(9,10,"K"),(10,2,"L")]
+        paramsBefore = SOne 6 [(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1)),(2,("2",Unexplored,-1)),(3,("3",Unexplored,-1))] [(1,("1",Queued,-1))]
+        paramsAfter = SOne 7 [(1,("1",Queued,-1)),(4,("4",Unexplored,-1)),(5,("5",Unexplored,-1)),(6,("6",Unexplored,-1)),(7,("7",Unexplored,-1)),(2,("2",Unexplored,-1)),(3,("3",Unexplored,-1))] [(2,("10",Unexplored,-1))] in
+    TestCase (assertEqual "fully exploring a node," (sccStep' paramsBefore graphBefore) (Right (graphAfter, paramsAfter)))
+
+
 
 testStep1toStep2 =
     let
@@ -123,6 +137,7 @@ testSCCFinishing =
 testsSCC = TestList [
     TestLabel "testStep1ExtendPath" testStep1ExtendPath,
     TestLabel "testStep1ExploreNode" testStep1ExploreNode,
+    TestLabel "testStep1Restarting" testStep1Restarting,
     TestLabel "testStep1toStep2" testStep1toStep2,
     TestLabel "testStep2toStep3" testStep2toStep3,
     TestLabel "testStep3ExploringNode" testStep3ExploringNode,
