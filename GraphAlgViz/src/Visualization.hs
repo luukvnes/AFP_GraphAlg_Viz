@@ -18,34 +18,34 @@ import GHC.Word
 
 newtype AlgorithmViz a b = Viz (Gr a b -> DotGraph Node)
 
--- |'visualize' takes an 'AlgorithmViz' and a 'Gr' and runs the visualization algorithm on the graph to create an image storing at the last imageFolder with an incremented name. 
+-- |'visualize' takes an 'AlgorithmViz' and a 'Gr' and runs the visualization algorithm on the graph to create an image storing at the last imageFolder with an incremented name.
 visualize :: AlgorithmViz a b -> Gr a b -> IO ()
 visualize (Viz alg) graph = do
-    dirs <- listDirectory "resultFolder/ImageFolders"
+    dirs  <- listDirectory "resultFolder/ImageFolders"
     let dir = head dirs
     files <- listDirectory ("resultFolder/ImageFolders/" ++ dir)
     let lastFile = if null files then "0.bmp" else last (sort files)
     print lastFile
     let newFileName = "resultFolder/ImageFolders/" ++ dir ++ "/" ++ incrementFileName lastFile ".bmp"
-    str <- runGraphviz (alg graph) Bmp newFileName
+    str   <- runGraphviz (alg graph) Bmp newFileName
     putStrLn str
 
 
 
 -- --same as run, but prints the graph to the terminal at every step
--- runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
--- runAndViz algStep algViz params graph = case step algStep params graph of
---                                         Left r -> print "Final graph" >>  print graph >> (print ("Result is: " ++ show r))
---                                         Right (newGraph, newParams) -> print graph >> runAndViz algStep algViz newParams newGraph
 
+-- | 'runAndViz' takes an 'AlgStep' and a way to visualize it, 'AlgorithmViz',
+--   a set if initial parameters and a graph and calls 'visualize' at every step.
 runAndViz :: (Show r, Show a, Show b) => AlgStep a b p r -> AlgorithmViz a b -> p -> Gr a b -> IO ()
 runAndViz algStep algViz params graph = case step algStep params graph of
-                                        Left r -> print "Final graph" >>  visualize algViz graph >> (print ("Result is: " ++ show r))
+                                        Left  r                     -> print "Final graph" >>  visualize algViz graph >> (print ("Result is: " ++ show r))
                                         Right (newGraph, newParams) -> visualize algViz graph >> runAndViz algStep algViz newParams newGraph
 
+-- | 'runAndPrettyPrint' dus the same as 'runAndViz', but instead of visualizing
+--   it pretty prints the graph to the terminal.
 runAndPrettyPrint :: (Show r, Show a, Show b, Show p) => AlgStep a b p r -> p -> Gr a b -> IO ()
 runAndPrettyPrint algStep params graph = case step algStep params graph of
-                                              Left r -> print "Final graph" >> prettyPrint graph >> (print ("Result is: " ++ show r))
+                                              Left  r                     -> print "Final graph" >> prettyPrint graph >> (print ("Result is: " ++ show r))
                                               Right (newGraph, newParams) -> prettyPrint graph >> print newParams >> print "--------------------------" >> runAndPrettyPrint algStep newParams newGraph
 
 -- |'bfsViz' returns the visualization function used in bfs.
@@ -65,10 +65,10 @@ bfsViz' graph = setDirectedness graphToDot params graph
                          , fmtEdge          = const []
                          }
     clustBy (n,l) = C 1 $ N (n,l)
-    fmtNode (_, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing], label l ]
-    fmtNode (_, (l, Queued)) = [Color [WC (X11Color Red) Nothing], label l ]
-    fmtNode (_, (l, Explored)) = [Color [WC (X11Color Green) Nothing], label l ]
-    fmtNode (_, (l, Goal)) = [Color [WC (X11Color Yellow) Nothing], label l ]
+    fmtNode (_, (l, Unexplored)) = [Color [WC (X11Color Blue) Nothing],   label l ]
+    fmtNode (_, (l, Queued))     = [Color [WC (X11Color Red) Nothing],    label l ]
+    fmtNode (_, (l, Explored))   = [Color [WC (X11Color Green) Nothing],  label l ]
+    fmtNode (_, (l, Goal))       = [Color [WC (X11Color Yellow) Nothing], label l ]
 
     label :: Show a => a -> Attribute
     label = Label . StrLabel . pack . filter (/='"') . show
@@ -98,13 +98,13 @@ sccViz' (width, height) graph = setDirectedness graphToDot params graph
                          }
     clustBy (n,l) = C 1 $ N (n,l)
     fmtNode (_, (l, Unexplored, _)) = [Color [WC (X11Color Blue) Nothing], label l ]
-    fmtNode (_, (l, Queued, _)) = [Color [WC (X11Color Red) Nothing], label l ]
+    fmtNode (_, (l, Queued, _))     = [Color [WC (X11Color Red) Nothing], label l ]
     -- if in step 1
     --    then we give it a green colour depending on when it was added to the stack
     -- in step 3,
     --    then we give it a random colour from a list of fairly random colours.
     fmtNode (_, (l, Explored, s)) | s > sizeOfStack = [Color [WC (colorsForStack !! ((s-sizeOfStack) `mod` 20)) Nothing], label l ]
-                                  | otherwise = [Color [WC (rgbFromStackID s) Nothing], label l ]
+                                  | otherwise       = [Color [WC (rgbFromStackID s) Nothing],                             label l ]
 
 
     -- 20 colors to use to colours the stack

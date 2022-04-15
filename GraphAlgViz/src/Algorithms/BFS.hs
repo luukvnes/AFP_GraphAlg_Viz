@@ -1,4 +1,4 @@
-module Algorithms.BFS where 
+module Algorithms.BFS where
 
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
@@ -13,15 +13,18 @@ import Graph
 import Helper
 import GHC.Base (undefined)
 
+--------------BFS----------------------------------------
 
+-- | 'BFSParams' conatins the parameters needed to run Breadth First Search
+--   It consists of a function dictating whether a Node label is the label is the target
+--   and a queue of nodes
 type BFSParams a = ((a -> Bool), [LNode (a,Flag)])
 
-
+-- | 'bfsStep' is the single step implementation of Breadth First Search
+--   BFS tries to find a node that satisifies the property in the 'BFSParams'
+--   If it manages to find one, it returns it.
+--   It requires the node labels to have a flag of type 'Flag'
 bfsStep :: Eq a => AlgStep (a, Flag) b (BFSParams a) (Maybe (LNode a))
--- bfs has params
--- (LNode a -> Bool), a function that checks if the found node is the one were looking for
--- [LNode (a,Bool)], a queue
--- returns the node if it finds one.
 bfsStep = Step bfsStep'
 
 {-
@@ -54,40 +57,48 @@ bfsStep' (p, (q:qs)) graph | p label'  = Left . Just . removeFlag $ q
   where label' = fst . snd $ q
         --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
-        f l@(label, Queued)     | label == label' = (label, Explored)
+        f l@(label, Queued)     | label == label'                              = (label, Explored)
         f l@(label, Unexplored) | label `elem` (map (fst.snd) unexploredNodes) = (label, Queued)
-        f l                     | otherwise = l
+        f l                     | otherwise                                    = l
         --the new parameters are the same as the old ones, only the queue is appended with unexplored nodes, now marked explored
         newParams = (p, qs ++ unexploredNodes)
         --get all outgoing neighbours of the first node in the queue en check if they have been explored by inspecting their flag
         unexploredNodes = sortOn fst $ filter unexplored $ listOutNeighbors graph $ fst q
-        unexplored n = let flag = getFlag n in flag == Unexplored || flag == Goal
+        unexplored n    = let flag = getFlag n in flag == Unexplored || flag == Goal
 
 
--- runs the bfs algorithm by calling run with the right parameters
+-- | 'bfsRun' runs the bfs algorithm by calling run with the initial parameters
 bfsRun :: Eq a => (a -> Bool) -> Gr a b -> Maybe (LNode a)
 bfsRun p graph = run bfsStep params flaggedGraph
   where params = (p, [addFlag (const Queued) firstNode])
+
         flaggedGraph = nmap flagNode graph
-        flagNode l | p l = (l, Goal)
+
+        flagNode l | p l                                 = (l, Goal)
         flagNode l | Just l == lab graph (fst firstNode) = (l,Queued)
-        flagNode l | otherwise = (l,Unexplored)
+        flagNode l | otherwise                           = (l,Unexplored)
+
         firstNode = head . labNodes $ graph
 
-
+-- | creates inital parameters for 'bfsStep' from a graph 'Gr'
+--   and a target label of type 'a'
+--   notice this is less general than the overall implementation
+--   since we assume the function dictating which node we are looking for simply
+--   matches the label.
 bfsStart :: Eq a => a -> Gr a b -> (BFSParams a, Gr (a, Flag) b)
 bfsStart target graph = (params, flaggedGraph)
   where
-    firstNode = head . labNodes $ graph
+    firstNode    = head . labNodes $ graph
     flaggedGraph = nmap flagNode graph
-    flagNode l | l == target = (l, Goal)
+
+    flagNode l | l == target                         = (l, Goal)
     flagNode l | Just l == lab graph (fst firstNode) = (l,Queued)
-    flagNode l | otherwise = (l,Unexplored)
+    flagNode l | otherwise                           = (l,Unexplored)
+
     p l = l == target
+
     params = (p, [addFlag (const Queued) firstNode])
 
-
---------------BFS----------------------------------------
 
 {-
 Psuedocode for the implementation of breadth first search

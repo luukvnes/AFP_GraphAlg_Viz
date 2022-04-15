@@ -25,7 +25,7 @@ import GHC.Base (undefined)
 5      DFS restarting at unexplored vertex top of the stack, every vertex you discover from a single starting vertex belongs to scc
 -}
 
--- | 'SCCParams' contain the paramaters for all the SCC steps. There are three constructors, 
+-- | 'SCCParams' contain the paramaters for all the SCC steps. There are three constructors,
 data SCCParams a =
         -- | 'SOne' takes the paramaters for the first step, an int that counts how many nodes have been added to the stack, the scc stack and the current path of the dfs as stack.
         SOne Int (S (SCCFlagNode a)) (S (SCCFlagNode a)) |
@@ -46,8 +46,8 @@ sccStep = Step sccStep'
 
 -- | A step function for the strongly connected component algorithm
 sccStep' ::  (Eq a, Ord a, Show a) => SCCParams a -> Gr (SCCFlagNode a) b -> Either Int (Gr (SCCFlagNode a) b, SCCParams a)
-sccStep' (SOne sccID a b) graph = Right (sccStep1' (sccID,a, b) graph)
-sccStep' (STwo stack) graph = Right (sccStep2' stack graph)
+sccStep' (SOne sccID a b) graph   = Right (sccStep1' (sccID,a, b) graph)
+sccStep' (STwo stack) graph       = Right (sccStep2' stack graph)
 sccStep' (SThree sccID a b) graph = sccStep3' (sccID,a, b) graph
 
 -- | A step function for the first step of the strongly connected component algorithm
@@ -87,10 +87,10 @@ sccStep1' _ _ = error "this should not happen"
 sccStep2' ::  (Eq a, Ord a, Show a) => S (SCCFlagNode a) -> Gr (SCCFlagNode a) b -> (Gr (SCCFlagNode a) b, SCCParams a)
 sccStep2' (s:ss) graph = (createFlaggedGraph newGraph firstNode, newParams)
     where
-        newGraph = fromEdgeList newEdgeList
+        newGraph    = fromEdgeList newEdgeList
         newEdgeList = map (labelEdge graph) (labEdges graph)
-        firstNode = removeFlagSCC s
-        newParams = SThree 5 (s:ss) [addFlagSCC (const Queued) firstNode]
+        firstNode   = removeFlagSCC s
+        newParams   = SThree 5 (s:ss) [addFlagSCC (const Queued) firstNode]
 sccStep2' _ _ = error "empty graph"
 
 -- | A step function for the third step of the strongly connected component algorithm

@@ -10,26 +10,27 @@ import Control.Monad
 import Graph
 
 
-
+-- | 'Flag' is a type for storing the status of a 'LNode' during execution of algorithms,
+--  with accompanying helper functions for manipulating flags in node labels
 data Flag = Unexplored
           | Explored
           | Queued
           | Goal
           deriving (Show, Eq, Ord)
 
---Helper functions for manipulating flags in node labels
---add a boolean flag to the label type using a tuple and a function from nodes to booleans
+-- | add a flag to the label type using a tuple and a function from nodes to flags
 addFlag :: (LNode a -> Flag) -> LNode a -> LNode (a,Flag)
 addFlag p n@(node,label) = (node, (label,p n))
 
+-- | set the flag of a node, using a function that computes the new flag from the old node.
 setFlag :: (LNode (a,Flag) -> Flag) -> LNode (a,Flag) -> LNode (a,Flag)
 setFlag p n@(node,(label, _)) = (node, (label,p n))
 
---extract a boolean flag from a node
+-- | extracts a flag from a node
 getFlag :: LNode (a,Flag) -> Flag
 getFlag (_,(_,f)) = f
 
---remove a flag from a node.
+-- | removes a flag from a node.
 removeFlag :: LNode (a,Flag) -> LNode a
 removeFlag (n,(l,_)) = (n,l)
 
@@ -56,14 +57,14 @@ incrementFileName str extension = zeros ++ resNString ++ extension
     where
         resNString :: String
         resNString = show (read (dropExtension str) + 1)
-        zeros :: String
-        zeros = replicate (4 - length resNString) '0'
+        zeros      :: String
+        zeros      = replicate (4 - length resNString) '0'
 
 -- |'incrementFileName' takes a file name and drops its extension
 dropExtension :: String -> String
-dropExtension [] = []
+dropExtension []      = []
 dropExtension ('.':_) = []
-dropExtension (x:xs) = x : dropExtension xs
+dropExtension (x:xs)  = x : dropExtension xs
 
 -- |'incrementFolderName' takes a string in the shape of NNNN (0063) and returns the incremented folder name (0064)
 incrementFolderName :: String -> String
@@ -71,8 +72,8 @@ incrementFolderName str = zeros ++ resNString
     where
         resNString :: String
         resNString = show (read (dropExtension str) + 1)
-        zeros :: String
-        zeros = replicate (4 - length resNString) '0'
+        zeros      :: String
+        zeros      = replicate (4 - length resNString) '0'
 
 -- |'createFolderStructure' creates all the required folders where images and gifs are stored.
 createFolderStructure :: IO ()
@@ -83,7 +84,7 @@ createFolderStructure = do
     unless exists $ createDirectory "resultFolder/gifResults"
     exists <- doesDirectoryExist "resultFolder/ImageFolders"
     unless exists $ createDirectory "resultFolder/ImageFolders"
-    dirs <- listDirectory "resultFolder/ImageFolders"
+    dirs   <- listDirectory "resultFolder/ImageFolders"
     let isDirEmpty =  null dirs
     if isDirEmpty then createDirectory "resultFolder/ImageFolders/0000" else createDirectory $ "resultFolder/ImageFolders/" ++ incrementFolderName (last (sort dirs))
 
@@ -104,9 +105,9 @@ retrieveDefaultGif = do
 -- |'getGraph' takes user input and returns the path for the used graph with default graphs/default.txt
 getGraph :: IO (Gr String String)
 getGraph = do
-    line <- getLine
+    line     <- getLine
     let location = if line == "" then "graphs/default.txt" else line
-    handle <- openFile location ReadMode
+    handle   <- openFile location ReadMode
     contents <- hGetContents handle
     return $ parseGraph contents
 

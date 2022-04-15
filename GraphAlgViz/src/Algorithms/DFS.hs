@@ -1,5 +1,5 @@
-module Algorithms.DFS where 
-    
+module Algorithms.DFS where
+
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 
@@ -15,24 +15,25 @@ import Helper
 import GHC.Base (undefined)
 
 
----------------------DFS-------------------------------------------------------
+-- | 'DFSParams' conatins the parameters needed to run Breadth First Search
+--   It consists of a function dictating whether a Node label is the label is the target
+--   and a queue of nodes
 type DFSParams a = ((a -> Bool), [LNode (a,Flag)])
 
+-- | 'dfsStep' is the single step implementation of Depth First Search
+--   DFS tries to find a node that satisifies the property in the 'DFSParams'
+--   If it manages to find one, it returns it.
+--   It requires the node labels to have a flag of type 'Flag'
 dfsStep :: Eq a => Ord a => AlgStep (a, Flag) b (DFSParams a) (Maybe (LNode a))
--- dfs has params
--- (LNode a -> Bool), a function that checks if the found node is the one were looking for
--- [LNode (a,Bool)], a stack
--- returns the node if it finds one.
 dfsStep = Step dfsStep'
 
--- Change labeling to label as explored when dequeued for nicer visualization.
 dfsStep' :: (Eq a) => Ord a =>
         DFSParams a ->
         Gr (a, Flag) b ->
         Either (Maybe (LNode a)) (Gr (a, Flag) b, DFSParams a)
-dfsStep' (_, []) _ = Left Nothing
-dfsStep' (p,q@(_,(label', _)):qs) graph | p label' = Left . Just . removeFlag $ q
-                                | otherwise        = Right (newGraph, newParams)
+dfsStep' (_, []) _                                  = Left Nothing
+dfsStep' (p,q@(_,(label', _)):qs) graph | p label'  = Left . Just . removeFlag $ q
+                                        | otherwise = Right (newGraph, newParams)
   where --the new graph is the old graph where the labels have been updated accoring to if the nodes have been explored.
         newGraph = nmap f graph
         f l@(label, Queued)     | label == label' = (label, Explored)
@@ -44,13 +45,23 @@ dfsStep' (p,q@(_,(label', _)):qs) graph | p label' = Left . Just . removeFlag $ 
         unexploredNodes = sortOn fst $ filter unexplored $ listOutNeighbors graph $ fst q
         unexplored n = let flag = getFlag n in flag == Unexplored || flag == Goal
 
--- runs the dfs algorithm by calling run with the right parameters
+-- | 'dfsRun' runs the dfs algorithm by calling run with the initial parameters
 dfsRun :: Eq a => Ord a => (a -> Bool) -> Gr a b -> Maybe (LNode a)
 dfsRun p graph = run dfsStep params flaggedGraph
   where params = (p, [addFlag (const Queued) firstNode])
-        flaggedGraph = nmap (\x -> if Just x == lab graph (fst firstNode) then (x,Queued) else (x,Unexplored)) graph
+
+        flaggedGraph = nmap flagNode graph
+
+        flagNode l | p l                                 = (l, Goal)
+        flagNode l | Just l == lab graph (fst firstNode) = (l,Queued)
+        flagNode l | otherwise                           = (l,Unexplored)
+
         firstNode = head . labNodes $ graph
 
+-- | creates inital parameters for 'dfsStep' from a graph 'Gr'
+--   and a target label of type 'a'
+--   notice this is less general than the overall implementation
+--   since we assume the function dictating which node we are looking for simply
+--   matches the label.
 dfsStart :: Eq a => a -> Gr a b -> (DFSParams a, Gr (a, Flag) b)
 dfsStart = bfsStart
-
